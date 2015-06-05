@@ -1,3 +1,6 @@
+## This is a fork
+
+- Simply rewriting in ES6 for educational purposes!
 
 # RecurrentJS
 
