@@ -1,0 +1,41 @@
+{
+  "name": "recurrentjs",
+  "version": "1.0.0",
+  "description": "- Simply rewriting in ES6 for educational purposes!",
+  "main": "Gulpfile.js",
+  "dependencies": {
+    "babelify": "^6.1.2",
+    "browserify": "^10.2.4",
+    "browserify-shim": "^3.8.9",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-serve": "^1.0.0",
+    "gulp-util": "^3.0.5",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "devDependencies": {
+    "babelify": "^6.1.2",
+    "browserify": "^10.2.4",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-bower": "0.0.10",
+    "gulp-concat": "^2.5.2",
+    "gulp-serve": "^1.0.0",
+    "gulp-util": "^3.0.5",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucidrains/recurrentjs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lucidrains/recurrentjs/issues"
+  },
+  "homepage": "https://github.com/lucidrains/recurrentjs"
+}
