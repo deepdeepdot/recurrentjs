@@ -97,10 +97,6 @@ s.step(lstm_model, 0.01, 0.00001, 5.0);
 
 You'll notice that the Softmax and so on isn't folded very neatly into the library yet and you have to understand backpropagation. I'll fix this soon.
 
-## Warning: Beta
-
-This code works fine, but it's a bit rough around the edges - you have to understand Neural Nets well if you want to use it and it isn't beautifully modularized. I thought I would still make the code available now and work on polishing it further later, since I hope that even in this state it can be useful to others who may want to browse around and get their feet wet with training these models or learning about them.
-
 ## License
 MIT
 
