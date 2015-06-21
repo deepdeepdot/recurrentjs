@@ -1,4 +1,4 @@
-import Mat from "./mat.es6";
+import {Mat} from "./mat.es6";
 
 class Solver {
   constructor() {

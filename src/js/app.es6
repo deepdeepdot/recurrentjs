@@ -1,6 +1,7 @@
 import R from "./recurrent.es6";
 import Rvis from "./vis.es6";
-import Mat from "./mat.es6";
+import {RandMat, Mat, softmax} from "./mat.es6";
+import {randi, maxi, samplei} from "./math.es6";
 import Graph from "./graph.es6";
 import Solver from "./solver.es6";
 
@@ -74,7 +75,7 @@ var utilAddToModel = function(modelto, modelfrom) {
 var initModel = function() {
   // letter embedding vectors
   var model = {};
-  model['Wil'] = new R.RandMat(input_size, letter_size , 0, 0.08);
+  model['Wil'] = new RandMat(input_size, letter_size , 0, 0.08);
   
   if(generator === 'rnn') {
     var rnn = R.initRNN(letter_size, hidden_sizes, output_size);
@@ -209,10 +210,7 @@ var forwardIndex = function(G, model, ix, prev) {
   return out_struct;
 }
 
-var predictSentence = function(model, samplei, temperature) {
-  if(typeof samplei === 'undefined') { samplei = false; }
-  if(typeof temperature === 'undefined') { temperature = 1.0; }
-
+var predictSentence = function(model, samplei_bool=false, temperature=1.0) {
   var G = new Graph(false);
   var s = '';
   var prev = {};
@@ -225,7 +223,7 @@ var predictSentence = function(model, samplei, temperature) {
 
     // sample predicted letter
     logprobs = lh.o;
-    if(temperature !== 1.0 && samplei) {
+    if(temperature !== 1.0 && samplei_bool) {
       // scale log probabilities by temperature and renormalize
       // if temperature is high, logprobs will go towards zero
       // and the softmax outputs will be more diffuse. if temperature is
@@ -235,11 +233,11 @@ var predictSentence = function(model, samplei, temperature) {
       }
     }
 
-    probs = R.softmax(logprobs);
-    if(samplei) {
-      var ix = R.samplei(probs.w);
+    probs = softmax(logprobs);
+    if(samplei_bool) {
+      var ix = samplei(probs.w);
     } else {
-      var ix = R.maxi(probs.w);  
+      var ix = maxi(probs.w);  
     }
     
     if(ix === 0) break; // END token predicted, break out
@@ -270,7 +268,7 @@ var costfun = function(model, sent) {
 
     // set gradients into logprobabilities
     logprobs = lh.o; // interpret output as logprobs
-    probs = R.softmax(logprobs); // compute the softmax probabilities
+    probs = softmax(logprobs); // compute the softmax probabilities
 
     log2ppl += -Math.log2(probs.w[ix_target]); // accumulate base 2 log prob and do smoothing
     cost += -Math.log(probs.w[ix_target]);
@@ -295,7 +293,7 @@ var tick_iter = 0;
 var tick = function() {
 
   // sample sentence fromd data
-  var sentix = R.randi(0,data_sents.length);
+  var sentix = randi(0,data_sents.length);
   var sent = data_sents[sentix];
 
   var t0 = +new Date();  // log start timestamp

@@ -1,5 +1,5 @@
 import {assert} from "./helper.es6";
-import Mat from "./mat.es6";
+import {Mat} from "./mat.es6";
 
 let sig = (x) => {
   // helper function for computing sigmoid
