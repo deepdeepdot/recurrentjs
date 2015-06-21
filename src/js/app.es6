@@ -390,6 +390,7 @@ $(() => {
     if(iid !== null) { clearInterval(iid); }
     iid = null;
   });
+  
   $("#resume").click(() => {
     if(iid === null) {
       iid = setInterval(tick, 0); 

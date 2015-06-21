@@ -5,6 +5,7 @@
   "main": "Gulpfile.js",
   "dependencies": {
     "babelify": "^6.1.2",
+    "bower": "^1.4.1",
     "browserify": "^10.2.4",
     "browserify-shim": "^3.8.9",
     "gulp": "^3.9.0",

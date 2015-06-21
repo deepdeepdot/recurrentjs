@@ -1,3 +1,7 @@
+var randf = (a, b)=> Math.random()*(b-a)+a;
+var randi = (a, b) => Math.floor(Math.random()*(b-a)+a);
+var randn = (mu, std) => mu+gaussRandom()*std;
+
 // Random numbers utils
 var return_v = false;
 var v_val = 0.0;
@@ -16,10 +20,6 @@ var gaussRandom = () => {
   return_v = true;
   return u*c;
 }
-
-var randf = (a, b)=> Math.random()*(b-a)+a;
-var randi = (a, b) => Math.floor(Math.random()*(b-a)+a);
-var randn = (mu, std) => mu+gaussRandom()*std;
 
 var fillRandn = (m, mu, std) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randn(mu, std); } }
 var fillRand = (m, lo, hi) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randf(lo, hi); } }

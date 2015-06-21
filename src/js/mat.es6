@@ -27,10 +27,11 @@ class Mat {
   }
   
   toJSON() {
-    var json = {};
-    json['n'] = this.n;
-    json['d'] = this.d;
-    json['w'] = this.w;
+    var json = {
+      'n': this.n,
+      'd': this.d,
+      'w': this.w
+    };
     return json;
   }
   
