@@ -8,7 +8,8 @@ let assert = (condition, message="Assertion failed") => {
 // helper function returns array of zeros of length n
 // and uses typed arrays if available
 let zeros = (n) => {
-  if(typeof(n)==='undefined' || isNaN(n)) { return []; }
+  assert(!isNaN(n));
+
   if(typeof ArrayBuffer === 'undefined') {
     // lacking browser support
     var arr = new Array(n);

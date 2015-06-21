@@ -8,8 +8,8 @@ let sig = (x) => {
 
 // Transformer definitions
 class Graph {
-  constructor(needs_backprop) {
-    if(typeof needs_backprop === 'undefined') { needs_backprop = true; }
+  constructor(needs_backprop=true) {
+    
     this.needs_backprop = needs_backprop;
 
     // this will store a list of functions that perform backprop,
@@ -32,7 +32,7 @@ class Graph {
     for(var i=0,n=d;i<n;i++){ out.w[i] = m.w[d * ix + i]; } // copy over the data
 
     if(this.needs_backprop) {
-      var backward = function() {
+      var backward = () => {
         for(var i=0,n=d;i<n;i++){ m.dw[d * ix + i] += out.dw[i]; }
       }
       this.backprop.push(backward);

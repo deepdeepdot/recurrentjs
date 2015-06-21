@@ -22,12 +22,12 @@ The core of the library is a **Graph** structure which maintains the links betwe
 
 ```javascript
 
-var W = new R.RandMat(10, 4); // weights Mat
-var x = new R.RandMat(4, 1); // random input Mat
-var b = new R.RandMat(10, 1); // bias vector
+var W = new RandMat(10, 4); // weights Mat
+var x = new RandMat(4, 1); // random input Mat
+var b = new RandMat(10, 1); // bias vector
 
 // matrix multiply followed by bias offset. h is a Mat
-var G = new R.Graph();
+var G = new Graph();
 var h = G.add(G.mul(W, x), b); 
 // the Graph structure keeps track of the connectivities between Mats
 
@@ -40,7 +40,7 @@ h.dw[0] = 1.0; // say we want the first value to be lower
 G.backward();
 
 // do a parameter update on W,b:
-var s = new R.Solver(); // the Solver uses RMSProp
+var s = new Solver(); // the Solver uses RMSProp
 // update W and b, use learning rate of 0.01, 
 // regularization strength of 0.0001 and clip gradient magnitudes at 5.0
 var model = {'W':W, 'b':b};
@@ -54,23 +54,23 @@ To construct and train an LSTM for example, you would proceed as follows:
 // takes as input Mat of 10x1, contains 2 hidden layers of
 // 20 neurons each, and outputs a Mat of size 2x1
 var hidden_sizes = [20, 20];
-var lstm_model = R.initLSTM(10, hidden_sizes, 2);
-var x1 = new R.RandMat(10, 1); // example input #1
-var x2 = new R.RandMat(10, 1); // example input #2
-var x3 = new R.RandMat(10, 1); // example input #3
+var lstm_model = initLSTM(10, hidden_sizes, 2);
+var x1 = new RandMat(10, 1); // example input #1
+var x2 = new RandMat(10, 1); // example input #2
+var x3 = new RandMat(10, 1); // example input #3
 
 // pass 3 examples through the LSTM
-var G = new R.Graph();
-var out1 = R.forwardLSTM(G, lstm_model, hidden_sizes, x1, {});
-var out2 = R.forwardLSTM(G, lstm_model, hidden_sizes, x2, out1);
-var out3 = R.forwardLSTM(G, lstm_model, hidden_sizes, x3, out2);
+var G = new Graph();
+var out1 = forwardLSTM(G, lstm_model, hidden_sizes, x1, {});
+var out2 = forwardLSTM(G, lstm_model, hidden_sizes, x2, out1);
+var out3 = forwardLSTM(G, lstm_model, hidden_sizes, x3, out2);
 
 // the field .o contains the output Mats:
 // e.g. x1.o is a 2x1 Mat
 // for example lets assume we have binary classification problem
 // so the output of the LSTM are the log probabilities of the
 // two classes. Lets first get the probabilities:
-var prob1 = R.softmax(out1.o);
+var prob1 = softmax(out1.o);
 var target1 = 0; // suppose first input has class 0
 cost += -Math.log(probs.w[ix_target]); // softmax cost function
 
@@ -86,7 +86,7 @@ out1.dw[ix_target] -= 1;
 
 // update the LSTM parameters
 G.backward();
-var s = new R.Solver();
+var s = new Solver();
 
 // perform RMSprop update with
 // step size of 0.01

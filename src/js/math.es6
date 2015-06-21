@@ -21,10 +21,10 @@ var randf = (a, b)=> Math.random()*(b-a)+a;
 var randi = (a, b) => Math.floor(Math.random()*(b-a)+a);
 var randn = (mu, std) => mu+gaussRandom()*std;
 
-var fillRandn = function(m, mu, std) { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randn(mu, std); } }
-var fillRand = function(m, lo, hi) { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randf(lo, hi); } }
+var fillRandn = (m, mu, std) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randn(mu, std); } }
+var fillRand = (m, lo, hi) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randf(lo, hi); } }
 
-var samplei = function(w) {
+var samplei = (w) => {
   // sample argmax from w, assuming w are 
   // probabilities that sum to one
   var r = randf(0,1);
@@ -38,7 +38,7 @@ var samplei = function(w) {
   return w.length - 1; // pretty sure we should never get here?
 }
 
-var maxi = function(w) {
+var maxi = (w) => {
   // argmax of array w
   var maxv = w[0];
   var maxix = 0;

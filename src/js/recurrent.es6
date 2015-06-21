@@ -3,7 +3,7 @@ import {RandMat, Mat} from "./mat.es6";
 import Graph from "./graph.es6";
 import Solver from "./solver.es6";
 
-var initLSTM = function(input_size, hidden_sizes, output_size) {
+var initLSTM = (input_size, hidden_sizes, output_size) => {
   // hidden size should be a list
 
   var model = {};
@@ -38,7 +38,7 @@ var initLSTM = function(input_size, hidden_sizes, output_size) {
   return model;
 }
 
-var forwardLSTM = function(G, model, hidden_sizes, x, prev) {
+var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
   // forward prop for a single tick of LSTM
   // G is graph to append ops to
   // model contains LSTM parameters
@@ -105,7 +105,7 @@ var forwardLSTM = function(G, model, hidden_sizes, x, prev) {
   return {'h':hidden, 'c':cell, 'o' : output};
 }
 
-var initRNN = function(input_size, hidden_sizes, output_size) {
+var initRNN = (input_size, hidden_sizes, output_size) => {
   // hidden size should be a list
 
   var model = {};
@@ -122,7 +122,7 @@ var initRNN = function(input_size, hidden_sizes, output_size) {
   return model;
 }
 
- var forwardRNN = function(G, model, hidden_sizes, x, prev) {
+ var forwardRNN = (G, model, hidden_sizes, x, prev) => {
   // forward prop for a single tick of RNN
   // G is graph to append ops to
   // model contains RNN parameters

@@ -1,4 +1,4 @@
-import R from "./recurrent.es6";
+import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.es6";
 import Rvis from "./vis.es6";
 import {RandMat, Mat, softmax} from "./mat.es6";
 import {randi, maxi, samplei} from "./math.es6";
@@ -24,7 +24,7 @@ var generator, hidden_sizes, letter_size, regc, learning_rate, clipval, ch, lh, 
 
 var model = {};
 
-var initVocab = function(sents, count_threshold) {
+var initVocab = (sents, count_threshold) => {
   // go over all characters and keep track of all unique ones seen
   var txt = sents.join(''); // concat all
 
@@ -63,7 +63,7 @@ var initVocab = function(sents, count_threshold) {
   $("#prepro_status").text('found ' + vocab.length + ' distinct characters: ' + vocab.join(''));
 }
 
-var utilAddToModel = function(modelto, modelfrom) {
+var utilAddToModel = (modelto, modelfrom) => {
   for(var k in modelfrom) {
     if(modelfrom.hasOwnProperty(k)) {
       // copy over the pointer but change the key to use the append
@@ -72,23 +72,23 @@ var utilAddToModel = function(modelto, modelfrom) {
   }
 }
 
-var initModel = function() {
+var initModel = () => {
   // letter embedding vectors
   var model = {};
   model['Wil'] = new RandMat(input_size, letter_size , 0, 0.08);
   
   if(generator === 'rnn') {
-    var rnn = R.initRNN(letter_size, hidden_sizes, output_size);
+    var rnn = initRNN(letter_size, hidden_sizes, output_size);
     utilAddToModel(model, rnn);
   } else {
-    var lstm = R.initLSTM(letter_size, hidden_sizes, output_size);
+    var lstm = initLSTM(letter_size, hidden_sizes, output_size);
     utilAddToModel(model, lstm);
   }
 
   return model;
 }
 
-var reinit_learning_rate_slider = function() {
+var reinit_learning_rate_slider = () => {
   // init learning rate slider for controlling the decay
   // note that learning_rate is a global variable
   $("#lr_slider").slider({
@@ -104,7 +104,7 @@ var reinit_learning_rate_slider = function() {
   $("#lr_text").text(learning_rate.toFixed(5));
 }
 
-var reinit = function(cb) {
+var reinit = (cb) => {
   // note: reinit writes global vars
   
   // eval options to set some globals
@@ -120,7 +120,7 @@ var reinit = function(cb) {
 
   // process the input, filter out blanks
 
-  $.get("/data/paulgraham.txt", function(text){
+  $.get("/data/paulgraham.txt", (text) => {
     var data_sents_raw = text.split('\n');
 
     data_sents = [];
@@ -138,7 +138,7 @@ var reinit = function(cb) {
 
 }
 
-var saveModel = function() {
+var saveModel = () => {
   var out = {};
   out['hidden_sizes'] = hidden_sizes;
   out['generator'] = generator;
@@ -167,7 +167,7 @@ var saveModel = function() {
   $("#tio").val(JSON.stringify(out));
 }
 
-var loadModel = function(j) {
+var loadModel = (j) => {
   hidden_sizes = j.hidden_sizes;
   generator = j.generator;
   letter_size = j.letter_size;
@@ -199,18 +199,18 @@ var loadModel = function(j) {
   tick_iter = 0;
 }
 
-var forwardIndex = function(G, model, ix, prev) {
+var forwardIndex = (G, model, ix, prev) => {
   var x = G.rowPluck(model['Wil'], ix);
   // forward prop the sequence learner
   if(generator === 'rnn') {
-    var out_struct = R.forwardRNN(G, model, hidden_sizes, x, prev);
+    var out_struct = forwardRNN(G, model, hidden_sizes, x, prev);
   } else {
-    var out_struct = R.forwardLSTM(G, model, hidden_sizes, x, prev);
+    var out_struct = forwardLSTM(G, model, hidden_sizes, x, prev);
   }
   return out_struct;
 }
 
-var predictSentence = function(model, samplei_bool=false, temperature=1.0) {
+var predictSentence = (model, samplei_bool=false, temperature=1.0) => {
   var G = new Graph(false);
   var s = '';
   var prev = {};
@@ -249,7 +249,7 @@ var predictSentence = function(model, samplei_bool=false, temperature=1.0) {
   return s;
 }
 
-var costfun = function(model, sent) {
+var costfun = (model, sent) => {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
@@ -281,8 +281,8 @@ var costfun = function(model, sent) {
   return {'G':G, 'ppl':ppl, 'cost':cost};
 }
 
-function median(values) {
-  values.sort( function(a,b) {return a - b;} );
+var median = (values) => {
+  values.sort((a,b) => a - b);
   var half = Math.floor(values.length/2);
   if(values.length % 2) return values[half];
   else return (values[half-1] + values[half]) / 2.0;
@@ -290,7 +290,7 @@ function median(values) {
 
 var ppl_list = [];
 var tick_iter = 0;
-var tick = function() {
+var tick = () => {
 
   // sample sentence fromd data
   var sentix = randi(0,data_sents.length);
@@ -344,7 +344,7 @@ var tick = function() {
   }
 }
 
-var gradCheck = function() {
+var gradCheck = () => {
   var model = initModel();
   var sent = '^test sentence$';
   var cost_struct = costfun(model, sent);
@@ -376,34 +376,34 @@ var gradCheck = function() {
 
 var iid = null;
 
-$(function() {
+$(() => {
 
   // attach button handlers
-  $('#learn').click(function(){ 
-    reinit(function(){
+  $('#learn').click(() => { 
+    reinit(() => {
       if(iid !== null) { clearInterval(iid); }
       iid = setInterval(tick, 0); 
     });
   });
 
-  $('#stop').click(function(){ 
+  $('#stop').click(() => { 
     if(iid !== null) { clearInterval(iid); }
     iid = null;
   });
-  $("#resume").click(function(){
+  $("#resume").click(() => {
     if(iid === null) {
       iid = setInterval(tick, 0); 
     }
   });
 
   $("#savemodel").click(saveModel);
-  $("#loadmodel").click(function(){
+  $("#loadmodel").click(() => {
     var j = JSON.parse($("#tio").val());
     loadModel(j);
   });
 
-  $("#loadpretrained").click(function(){
-    $.getJSON("lstm_100_model.json", function(data) {
+  $("#loadpretrained").click(() => {
+    $.getJSON("lstm_100_model.json", (data) => {
       pplGraph = new Rvis.Graph();
       learning_rate = 0.0001;
       reinit_learning_rate_slider();

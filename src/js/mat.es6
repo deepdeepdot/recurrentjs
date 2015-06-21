@@ -46,7 +46,7 @@ class Mat {
 }
 
 // return Mat but filled with random numbers from gaussian
-var RandMat = function(n,d,mu,std) {
+var RandMat = (n,d,mu,std) => {
   var m = new Mat(n, d);
   //fillRandn(m,mu,std);
   fillRand(m,-std,std); // kind of :P
@@ -56,7 +56,7 @@ var RandMat = function(n,d,mu,std) {
 // Mat utils
 // fill matrix with random gaussian numbers
 
-var softmax = function(m) {
+var softmax = (m) => {
   var out = new Mat(m.n, m.d); // probability volume
   var maxval = -999999;
   for(var i=0,n=m.w.length;i<n;i++) { if(m.w[i] > maxval) maxval = m.w[i]; }
