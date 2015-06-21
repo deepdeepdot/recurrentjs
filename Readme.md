@@ -1,6 +1,13 @@
-## This is a fork
+## This is a fork to practice ES6 and learn recurrent neural networks!
 
-- Simply rewriting in ES6 for educational purposes!
+## Running the application locally
+
+```bash
+> npm install
+> bower install
+> gulp
+> open http://127.0.0.1:3000
+```
 
 # RecurrentJS
 
