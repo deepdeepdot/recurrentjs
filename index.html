@@ -3,7 +3,7 @@
     <title>RecurrentJS Sentence Memorization Demo</title>
 
     <link href="bower_components/jquery-ui/themes/eggplant/theme.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="dist/style.css"/>
 
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/jquery-ui/jquery-ui.js"></script>
@@ -12,7 +12,7 @@
 
   <body>
     <a href="https://github.com/karpathy/recurrentjs">
-      <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
+      <img id="forkme" src="src/images/forkme.png" alt="Fork me on GitHub">
     </a>
 
     <div id="wrap">
@@ -22,7 +22,7 @@
 
         In this demo we take a dataset of sentences as input and learn to memorize the sentences character by character. That is, the RNN/LSTM takes a character, its context from previous time steps (as mediated by the hidden layers) and predicts the next character in the sequence. Here is an example: <br><br>
 
-        <div style="text-align:center;"><img src="eg.png"></div>
+        <div style="text-align:center;"><img src="src/images/eg.png"></div>
 
         In the example image above that depicts a deep RNN, every character has an associated "letter vector" that we will train with backpropagation. These letter vectors are combined through a (learnable) Matrix-vector multiply transformation into the first hidden layer representation (yellow), then into second hidden layer representation (purple), and finally into the output space (blue). The output space has dimensionality equal to the number of characters in the dataset and every dimension provides the probability of the next character in the sequence. The network is therefore trained to always predict the next character (using Softmax + cross-entropy loss on all letters). The quantity we track during training is called the <b>perplexity</b>, which measures how surprised the network is to see the next character in a sequence. For example, if perplexity is 4.0 then it's as if the network was guessing uniformly at random from 4 possible characters for next letter (i.e. lowest it can be is 1). At test time, the prediction is currently done iteratively character by character in a greedy fashion, but I might eventually implemented more sophisticated methods (e.g. beam search).<br><br>
 

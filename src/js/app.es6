@@ -1,5 +1,8 @@
-import R from "./src/recurrent.es6";
-import Rvis from "./src/vis.es6";
+import R from "./recurrent.es6";
+import Rvis from "./vis.es6";
+import Mat from "./mat.es6";
+import Graph from "./graph.es6";
+import Solver from "./solver.es6";
 
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
@@ -13,10 +16,10 @@ var letterToIndex = {};
 var indexToLetter = {};
 var vocab = [];
 var data_sents = [];
-var solver = new R.Solver(); // should be class because it needs memory for step caches
+var solver = new Solver(); // should be class because it needs memory for step caches
 var pplGraph = new Rvis.Graph();
 
-var generator, hidden_sizes, letter_size, regc, learning_rate, clipval, ch, lh, logprobs, probs;
+var generator, hidden_sizes, letter_size, regc, learning_rate, clipval, ch, lh, logprobs, probs, step_cache_out, step_cache;
 
 var model = {};
 
@@ -108,7 +111,7 @@ var reinit = function(cb) {
 
   reinit_learning_rate_slider();
 
-  solver = new R.Solver(); // reinit solver
+  solver = new Solver(); // reinit solver
   pplGraph = new Rvis.Graph();
 
   ppl_list = [];
@@ -171,18 +174,18 @@ var loadModel = function(j) {
   for(var k in j.model) {
     if(j.model.hasOwnProperty(k)) {
       var matjson = j.model[k];
-      model[k] = new R.Mat(1,1);
+      model[k] = new Mat(1,1);
       model[k].fromJSON(matjson);
     }
   }
-  solver = new R.Solver(); // have to reinit the solver since model changed
+  solver = new Solver(); // have to reinit the solver since model changed
   solver.decay_rate = j.solver.decay_rate;
   solver.smooth_eps = j.solver.smooth_eps;
   solver.step_cache = {};
   for(var k in j.solver.step_cache){
       if(j.solver.step_cache.hasOwnProperty(k)){
           var matjson = j.solver.step_cache[k];
-          solver.step_cache[k] = new R.Mat(1,1);
+          solver.step_cache[k] = new Mat(1,1);
           solver.step_cache[k].fromJSON(matjson);
       }
   }
@@ -210,7 +213,7 @@ var predictSentence = function(model, samplei, temperature) {
   if(typeof samplei === 'undefined') { samplei = false; }
   if(typeof temperature === 'undefined') { temperature = 1.0; }
 
-  var G = new R.Graph(false);
+  var G = new Graph(false);
   var s = '';
   var prev = {};
   while(true) {
@@ -253,7 +256,7 @@ var costfun = function(model, sent) {
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
   var n = sent.length;
-  var G = new R.Graph();
+  var G = new Graph();
   var log2ppl = 0.0;
   var cost = 0.0;
   var prev = {};
