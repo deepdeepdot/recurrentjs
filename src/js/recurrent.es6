@@ -112,8 +112,8 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   for(var d=0;d<hidden_sizes.length;d++) { // loop over depths
     var prev_size = d === 0 ? input_size : hidden_sizes[d - 1];
     var hidden_size = hidden_sizes[d];
-    model['Wxh'+d] = new R.RandMat(hidden_size, prev_size , 0, 0.08);
-    model['Whh'+d] = new R.RandMat(hidden_size, hidden_size, 0, 0.08);
+    model['Wxh'+d] = new RandMat(hidden_size, prev_size , 0, 0.08);
+    model['Whh'+d] = new RandMat(hidden_size, hidden_size, 0, 0.08);
     model['bhh'+d] = new Mat(hidden_size, 1);
   }
   // decoder params

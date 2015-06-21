@@ -1,7 +1,7 @@
 import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.es6";
 import Rvis from "./vis.es6";
 import {RandMat, Mat, softmax} from "./mat.es6";
-import {randi, maxi, samplei} from "./math.es6";
+import {randi, maxi, samplei, gaussRandom} from "./math.es6";
 import Graph from "./graph.es6";
 import Solver from "./solver.es6";
 

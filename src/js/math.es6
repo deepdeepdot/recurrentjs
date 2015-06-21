@@ -1,25 +1,37 @@
+// Random numbers utils
+
 var randf = (a, b)=> Math.random()*(b-a)+a;
 var randi = (a, b) => Math.floor(Math.random()*(b-a)+a);
 var randn = (mu, std) => mu+gaussRandom()*std;
 
-// Random numbers utils
-var return_v = false;
-var v_val = 0.0;
 
-var gaussRandom = () => {
-  if(return_v) {
-    return_v = false;
-    return v_val; 
+let gaussRandom = (() => {
+  // polar form of the Box-Muller transformation
+  // faster and more robust numerically
+  // https://www.taygeta.com/random/gaussian.html
+
+  let cache_value = null;
+
+  return () => {
+    if(cache_value!==null) {
+      let temp = cache_value
+      cache_value = null;
+      return temp;
+    }
+    
+    let u, v, r;
+
+    while(!r || r >= 1){
+      u = randf(-1, 1);
+      v = randf(-1, 1);
+      r = u*u + v*v;
+    }
+
+    let c = Math.sqrt(-2*Math.log(r)/r);
+    cache_value = v*c;
+    return u*c;
   }
-  var u = 2*Math.random()-1;
-  var v = 2*Math.random()-1;
-  var r = u*u + v*v;
-  if(r == 0 || r > 1) return gaussRandom();
-  var c = Math.sqrt(-2*Math.log(r)/r);
-  v_val = v*c; // cache this
-  return_v = true;
-  return u*c;
-}
+})()
 
 var fillRandn = (m, mu, std) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randn(mu, std); } }
 var fillRand = (m, lo, hi) => { for(var i=0,n=m.w.length;i<n;i++) { m.w[i] = randf(lo, hi); } }
@@ -59,5 +71,6 @@ export default {
 	randi,
 	randn,
 	samplei,
-	maxi
+	maxi,
+  gaussRandom
 }

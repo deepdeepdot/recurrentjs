@@ -1,7 +1,3 @@
-
-// contains various utility functions 
-var Rvis = {};
-
 // can be used to graph loss, or accuract over time
 
 class Graph {
@@ -18,11 +14,11 @@ class Graph {
 
   // canv is the canvas we wish to update with this new datapoint
   add(step, y) {
-    var time = new Date().getTime(); // in ms
+    var time = +new Date(); // in ms
     if(y>this.maxy*0.99) this.maxy = y*1.05;
     if(y<this.miny*1.01) this.miny = y*0.95;
 
-    this.pts.push({step: step, time: time, y: y});
+    this.pts.push({step, time, y});
     if(step > this.step_horizon) this.step_horizon *= 2;
   }
   
@@ -89,6 +85,6 @@ class Graph {
   }
 }
 
-Rvis.Graph = Graph;
-
-export default Rvis;
+export default {
+  Graph
+};

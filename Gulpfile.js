@@ -10,18 +10,18 @@ var bower = require("gulp-bower");
 var sass = require('gulp-sass');
 
 gulp.task("babelify", function(){
-	browserify({
-		entries: "./src/js/app.es6",
-		debug: true
-	})
-	.transform(babelify.configure({
-	  blacklist: ["regenerator"],
-	  compact: false
-	}))
-	.bundle()
-	.on("error", gutil.log)
-	.pipe(source("main.js"))
-	.pipe(gulp.dest("./dist"));
+  browserify({
+    entries: "./src/js/app.es6",
+    debug: true
+  })
+  .transform(babelify.configure({
+    blacklist: ["regenerator"],
+    compact: false
+  }))
+  .bundle()
+  .on("error", gutil.log)
+  .pipe(source("main.js"))
+  .pipe(gulp.dest("./dist"));
 });
 
 
@@ -36,8 +36,8 @@ gulp.task('sass', function () {
 });
 
 gulp.task("watch", function(){
-	gulp.watch(["src/js/**/*.es6"], ["babelify"]);
-	gulp.watch(["src/css/**/*.scss"], ["sass"]);
+  gulp.watch(["src/js/**/*.es6"], ["babelify"]);
+  gulp.watch(["src/css/**/*.scss"], ["sass"]);
 });
 
 gulp.task("serve", serve("."));

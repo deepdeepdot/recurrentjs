@@ -160,7 +160,7 @@ class Graph {
       out.w[i] = m1.w[i] * m2.w[i];
     }
     if(this.needs_backprop) {
-      var backward = function() {
+      let backward = () => {
         for(var i=0,n=m1.w.length;i<n;i++) {
           m1.dw[i] += m2.w[i] * out.dw[i];
           m2.dw[i] += m1.w[i] * out.dw[i];

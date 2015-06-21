@@ -49,8 +49,7 @@ class Mat {
 // return Mat but filled with random numbers from gaussian
 var RandMat = (n,d,mu,std) => {
   var m = new Mat(n, d);
-  //fillRandn(m,mu,std);
-  fillRand(m,-std,std); // kind of :P
+  fillRand(m, mu, std);
   return m;
 }
 
