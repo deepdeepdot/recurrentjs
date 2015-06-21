@@ -404,7 +404,7 @@ $(() => {
   });
 
   $("#loadpretrained").click(() => {
-    $.getJSON("lstm_100_model.json", (data) => {
+    $.getJSON("saved_states/lstm_100_model.json", (data) => {
       pplGraph = new Rvis.Graph();
       learning_rate = 0.0001;
       reinit_learning_rate_slider();

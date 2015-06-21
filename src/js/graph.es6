@@ -1,10 +1,8 @@
 import {assert} from "./helper.es6";
 import {Mat} from "./mat.es6";
 
-let sig = (x) => {
-  // helper function for computing sigmoid
-  return 1.0/(1+Math.exp(-x));
-}
+// helper function for computing sigmoid
+let sig = (x) => 1.0/(1+Math.exp(-x));
 
 // Transformer definitions
 class Graph {
@@ -70,7 +68,7 @@ class Graph {
     }
 
     if(this.needs_backprop) {
-      var backward = function() {
+      let backward = function() {
         for(var i=0;i<n;i++) {
           // grad for z = tanh(x) is (1 - z^2)
           var mwi = out.w[i];
@@ -89,7 +87,7 @@ class Graph {
       out.w[i] = Math.max(0, m.w[i]); // relu
     }
     if(this.needs_backprop) {
-      var backward = function() {
+      let backward = () => {
         for(var i=0;i<n;i++) {
           m.dw[i] += m.w[i] > 0 ? out.dw[i] : 0.0;
         }
@@ -117,7 +115,7 @@ class Graph {
     }
 
     if(this.needs_backprop) {
-      var backward = function() {
+      let backward = () => {
         for(var i=0;i<m1.n;i++) { // loop over rows of m1
           for(var j=0;j<m2.d;j++) { // loop over cols of m2
             for(var k=0;k<m1.d;k++) { // dot product loop
@@ -141,7 +139,7 @@ class Graph {
       out.w[i] = m1.w[i] + m2.w[i];
     }
     if(this.needs_backprop) {
-      var backward = function() {
+      let backward = () => {
         for(var i=0,n=m1.w.length;i<n;i++) {
           m1.dw[i] += out.dw[i];
           m2.dw[i] += out.dw[i];
