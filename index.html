@@ -2,9 +2,7 @@
   <head>
     <title>RecurrentJS Sentence Memorization Demo</title>
 
-    <link href="bower_components/jquery-ui/themes/eggplant/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="dist/style.css"/>
-
     <script type="text/javascript" src="dist/app.js"></script>
   </head>
 
@@ -63,7 +61,7 @@
           <div class="hh">Training stats:</div>
           <div class="aslider">
             <div class="slider_header">Learning rate: you want to anneal this over time if you're training for longer time.</div>
-            <div class="theslider" id="lr_slider"></div>
+            <input id="lr_slider" type="range" min="-5" max="-1.95" step="0.05" value="-2"/>
             <div class="slider_value" id="lr_text"></div>
           </div>
 
@@ -80,7 +78,7 @@
         <div id="controls">
           <div class="aslider">
             <div class="slider_header">Softmax sample temperature: lower setting will generate more likely predictions, but you'll see more of the same common words again and again. Higher setting will generate less frequent words but you might see more spelling errors.</div>
-            <div class="theslider" id="temperature_slider"></div>
+            <input id="temperature_slider" type="range" min="-1" max="1.05" step="0.05" value="0"/>
             <div class="slider_value" id="temperature_text"></div>
           </div>
         </div>

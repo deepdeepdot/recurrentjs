@@ -6,7 +6,6 @@ var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var gutil = require("gulp-util");
 var concat = require("gulp-concat");
-var bower = require("gulp-bower");
 var sass = require('gulp-sass');
 
 gulp.task("babelify", function(){
@@ -22,11 +21,6 @@ gulp.task("babelify", function(){
   .on("error", gutil.log)
   .pipe(source("app.js"))
   .pipe(gulp.dest("./dist"));
-});
-
-
-gulp.task('bower', function() {
-  return bower({ cmd: 'update'});
 });
 
 gulp.task('sass', function () {

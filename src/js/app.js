@@ -8,8 +8,6 @@ import React from "react";
 import _ from "lodash";
 import $ from "jquery";
 
-require("jquery-ui");
-
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
 var max_chars_gen = 100; // max length of generated sentences
@@ -98,16 +96,18 @@ var initModel = () => {
 var reinit_learning_rate_slider = () => {
   // init learning rate slider for controlling the decay
   // note that learning_rate is a global variable
-  $("#lr_slider").slider({
-    min: Math.log10(0.01) - 3.0,
-    max: Math.log10(0.01) + 0.05,
-    step: 0.05,
-    value: Math.log10(learning_rate),
-    slide: function( event, ui ) {
-      learning_rate = Math.pow(10, ui.value);
-      $("#lr_text").text(learning_rate.toFixed(5));
-    }
+
+  // #lr_slider values
+  // min: Math.log10(0.01) - 3.0
+  // max: Math.log10(0.01) + 0.05
+  // step: 0.05
+  // value: Math.log10(learning_rate)
+
+  $("#lr_slider").on('change', function(){
+    learning_rate = Math.pow(10, this.value);
+    $("#lr_text").text(learning_rate.toFixed(5));
   });
+
   $("#lr_text").text(learning_rate.toFixed(5));
 }
 
@@ -419,16 +419,10 @@ $(() => {
 
   $("#learn").click(); // simulate click on startup
 
-  //$('#gradcheck').click(gradCheck);
-
-  $("#temperature_slider").slider({
-    min: -1,
-    max: 1.05,
-    step: 0.05,
-    value: 0,
-    slide: function( event, ui ) {
-      sample_softmax_temperature = Math.pow(10, ui.value);
-      $("#temperature_text").text( sample_softmax_temperature.toFixed(2) );
-    }
+  $('#temperature_slider').on('change', function(){
+    sample_softmax_temperature = Math.pow(10, this.value);
+    $("#temperature_text").text( sample_softmax_temperature.toFixed(2) );
   });
+
+  //$('#gradcheck').click(gradCheck);
 });
