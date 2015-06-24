@@ -72,3 +72,34 @@ body {
 #intro {
   text-align: justify;
 }
+
+// graph
+#pplgraph{
+  path {
+    stroke: steelblue;
+    stroke-width: 1;
+    fill: none;
+  }
+
+  .axis {
+    shape-rendering: crispEdges;
+  }
+
+  .x.axis .minor {
+    stroke-opacity: .5;
+  }
+
+  .tick line {
+    opacity: 0.8;
+  }
+
+  .tick text {
+    font-size: 12px;
+  }
+
+  .axis line, .axis path {
+    fill: none;
+    stroke-width: 1px;
+    stroke: lightgrey;
+  }
+}

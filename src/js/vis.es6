@@ -10,6 +10,8 @@ class Graph {
     
     this.maxy = -9999;
     this.miny = 9999;
+
+    this.graph = d3.select("#pplgraph");
   }
 
   // canv is the canvas we wish to update with this new datapoint
@@ -19,69 +21,66 @@ class Graph {
     if(y<this.miny*1.01) this.miny = y*0.95;
 
     this.pts.push({step, time, y});
-    if(step > this.step_horizon) this.step_horizon *= 2;
   }
   
   // elt is a canvas we wish to draw into
   drawSelf(canv) {
+    if(this.pts.length < 2)
+      return;
+
+    var m = {top: 10, right: 10, bottom: 20, left: 20};
+    var w = 250 - m.right - m.left;
+    var h = 200 - m.top - m.bottom;
+  
+    let first_pt = this.pts[0];
+    let last_pt = this.pts[this.pts.length - 1];
+
+    var x = d3.scale.linear().domain([first_pt.step, last_pt.step]).range([0, w]);
+    var y = d3.scale.linear().domain([this.miny, this.maxy]).range([h, 0]);
+      
+    var line = d3.svg.line()
+      .x(function(d) { 
+        return x(d.step); 
+      })
+      .y(function(d) { 
+        return y(d.y); 
+      })
     
-    var pad = 25;
-    var H = canv.height;
-    var W = canv.width;
-    var ctx = canv.getContext('2d');
+    this.graph.selectAll("*").remove();
 
-    ctx.clearRect(0, 0, W, H);
-    ctx.font="10px Georgia";
+    let graph = this.graph.append("svg:svg")
+      .attr("width", w + m.left + m.right)
+      .attr("height", h + m.bottom + m.top)
+      .append("svg:g")
+      .attr("transform", `translate(${m.left}, ${m.top})`);
 
-    let f2t = (x) => {
-      let dd = 1.0 * Math.pow(10, 2);
-      return '' + Math.floor(x*dd)/dd;
-    }
+    var xAxis = d3.svg.axis()
+      .scale(x)
+      .innerTickSize(-h)
+      .outerTickSize(0)
+      .ticks(6)
+      .tickFormat((d) => `${d/1000}k` )
+      .orient("bottom");
 
-    // draw guidelines and values
-    ctx.strokeStyle = "#999";
-    ctx.beginPath();
+    graph.append("svg:g")
+      .attr("class", "x axis")
+      .attr("transform", `translate(0, ${h})`)
+      .call(xAxis);
+
+    var yAxis = d3.svg.axis()
+      .scale(y)
+      .innerTickSize(-w)
+      .outerTickSize(0)
+      .ticks(6)
+      .orient("left");
+
+    graph.append("svg:g")
+      .attr("class", "y axis")
+      .attr("transform", `translate(0, 0)`)
+      .call(yAxis);
     
-    var ng = 10;
+    graph.append("svg:path").attr("d", line(this.pts));
     
-    for(var i=0;i<=ng;i++) {
-      var xpos = i/ng*(W-2*pad)+pad;
-      ctx.moveTo(xpos, pad);
-      ctx.lineTo(xpos, H-pad);
-      ctx.fillText(f2t(i/ng*this.step_horizon/1000)+'k',xpos,H-pad+14);
-    }
-
-    for(var i=0;i<=ng;i++) {
-      var ypos = i/ng*(H-2*pad)+pad;
-      ctx.moveTo(pad, ypos);
-      ctx.lineTo(W-pad, ypos);
-      ctx.fillText(f2t((ng-i)/ng*(this.maxy-this.miny) + this.miny), 0, ypos);
-    }
-
-    ctx.stroke();
-
-    var N = this.pts.length;
-    if(N<2) return;
-
-    // draw the actual curve
-    var t = (x, y, s) => {
-      var tx = x / s.step_horizon * (W-pad*2) + pad;
-      var ty = H - ((y-s.miny) / (s.maxy-s.miny) * (H-pad*2) + pad);
-      return {tx, ty}
-    }
-
-    ctx.strokeStyle = "red";
-    ctx.beginPath()
-
-    for(var i=0;i<N;i++) {
-      // draw line from i-1 to i
-      var p = this.pts[i];
-      var pt = t(p.step, p.y, this);
-      if(i===0) ctx.moveTo(pt.tx, pt.ty);
-      else ctx.lineTo(pt.tx, pt.ty);
-    }
-
-    ctx.stroke();
   }
 }
 

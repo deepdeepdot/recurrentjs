@@ -65,26 +65,28 @@ var initVocab = (sents, count_threshold) => {
 
 var utilAddToModel = (modelto, modelfrom) => {
   for(var k in modelfrom) {
-    if(modelfrom.hasOwnProperty(k)) {
-      // copy over the pointer but change the key to use the append
-      modelto[k] = modelfrom[k];
-    }
+    modelto[k] = modelfrom[k];
+    // if(modelfrom.hasOwnProperty(k)) {
+    //   // copy over the pointer but change the key to use the append
+    // }
   }
 }
 
 var initModel = () => {
   // letter embedding vectors
-  var model = {};
-  model['Wil'] = new RandMat(input_size, letter_size , 0, 0.08);
+  let model = {
+    "Wil": new RandMat(input_size, letter_size , 0, 0.08)
+  };
+  
+  let network;
   
   if(generator === 'rnn') {
-    var rnn = initRNN(letter_size, hidden_sizes, output_size);
-    utilAddToModel(model, rnn);
+    network = initRNN(letter_size, hidden_sizes, output_size);
   } else {
-    var lstm = initLSTM(letter_size, hidden_sizes, output_size);
-    utilAddToModel(model, lstm);
+    network = initLSTM(letter_size, hidden_sizes, output_size);
   }
-
+  
+  _.merge(model, network);
   return model;
 }
 

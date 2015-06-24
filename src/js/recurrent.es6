@@ -100,7 +100,7 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
   }
 
   // one decoder to outputs at end
-  let [, last_hidden] = hidden;
+  let last_hidden = hidden[hidden.length-1];
   var output = G.add(G.mul(model['Whd'], last_hidden), model['bd']);
 
   // return cell memory, hidden representation and output
