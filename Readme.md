@@ -8,6 +8,10 @@
 > open http://127.0.0.1:3000
 ```
 
+## Adding Other Training Data
+
+- drop any text file into the ./data folder and refresh the web page!
+
 # RecurrentJS
 
 RecurrentJS is a Javascript library that implements: 

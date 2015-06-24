@@ -5,6 +5,7 @@ import {median, randi, maxi, samplei, gaussRandom} from "./math.js";
 import Graph from "./graph.js";
 import Solver from "./solver.js";
 import React from "react";
+import {classSet as cx} from "react-addons";
 import _ from "lodash";
 import $ from "jquery";
 
@@ -48,14 +49,12 @@ var initVocab = (sents, count_threshold) => {
   // and END token will be index 0 in the next character softmax
   var q = 1; 
   for(ch in d) {
-    if(d.hasOwnProperty(ch)) {
-      if(d[ch] >= count_threshold) {
-        // add character to vocab
-        letterToIndex[ch] = q;
-        indexToLetter[q] = ch;
-        vocab.push(ch);
-        q++;
-      }
+    if(d[ch] >= count_threshold) {
+      // add character to vocab
+      letterToIndex[ch] = q;
+      indexToLetter[q] = ch;
+      vocab.push(ch);
+      q++;
     }
   }
 
@@ -69,9 +68,6 @@ var initVocab = (sents, count_threshold) => {
 var utilAddToModel = (modelto, modelfrom) => {
   for(var k in modelfrom) {
     modelto[k] = modelfrom[k];
-    // if(modelfrom.hasOwnProperty(k)) {
-    //   // copy over the pointer but change the key to use the append
-    // }
   }
 }
 
@@ -103,7 +99,7 @@ var reinit_learning_rate_slider = () => {
   // step: 0.05
   // value: Math.log10(learning_rate)
 
-  $("#lr_slider").on('change', function(){
+  $("#lr_slider").on('input change', function(){
     learning_rate = Math.pow(10, this.value);
     $("#lr_text").text(learning_rate.toFixed(5));
   });
@@ -111,10 +107,14 @@ var reinit_learning_rate_slider = () => {
   $("#lr_text").text(learning_rate.toFixed(5));
 }
 
+window.chosen_input_file = window.input_files[randi(0, window.input_files.length)];
+
 var reinit = (cb) => {
   // note: reinit writes global vars
   
   // eval options to set some globals
+  stop_timer();
+
   eval($("#newnet").val());
 
   reinit_learning_rate_slider();
@@ -127,7 +127,9 @@ var reinit = (cb) => {
 
   // process the input, filter out blanks
 
-  $.get("/data/paulgraham.txt", (text) => {
+  $.get(`/data/${chosen_input_file}`, (text) => {
+    $('#input_text').text(text);
+
     var data_sents_raw = text.split('\n');
 
     data_sents = [];
@@ -141,6 +143,8 @@ var reinit = (cb) => {
 
     initVocab(data_sents, 1); // takes count threshold for characters
     model = initModel();
+
+    render_input_file_container();
     cb && cb();
   });
 
@@ -153,9 +157,7 @@ var saveModel = () => {
   out['letter_size'] = letter_size;
   var model_out = {};
   for(var k in model) {
-    if(model.hasOwnProperty(k)) {
-      model_out[k] = model[k].toJSON();
-    }
+    model_out[k] = model[k].toJSON();
   }
   out['model'] = model_out;
   var solver_out = {};
@@ -163,9 +165,7 @@ var saveModel = () => {
   solver_out['smooth_eps'] = solver.smooth_eps;
   step_cache_out = {};
   for(var k in solver.step_cache) {
-    if(solver.step_cache.hasOwnProperty(k)) {
-      step_cache_out[k] = solver.step_cache[k].toJSON();
-    }
+    step_cache_out[k] = solver.step_cache[k].toJSON();
   }
   solver_out['step_cache'] = step_cache_out;
   out['solver'] = solver_out;
@@ -181,22 +181,18 @@ var loadModel = (j) => {
   letter_size = j.letter_size;
   model = {};
   for(var k in j.model) {
-    if(j.model.hasOwnProperty(k)) {
-      var matjson = j.model[k];
-      model[k] = new Mat(1,1);
-      model[k].fromJSON(matjson);
-    }
+    var matjson = j.model[k];
+    model[k] = new Mat(1,1);
+    model[k].fromJSON(matjson);
   }
   solver = new Solver(); // have to reinit the solver since model changed
   solver.decay_rate = j.solver.decay_rate;
   solver.smooth_eps = j.solver.smooth_eps;
   solver.step_cache = {};
   for(var k in j.solver.step_cache){
-      if(j.solver.step_cache.hasOwnProperty(k)){
-          var matjson = j.solver.step_cache[k];
-          solver.step_cache[k] = new Mat(1,1);
-          solver.step_cache[k].fromJSON(matjson);
-      }
+    var matjson = j.solver.step_cache[k];
+    solver.step_cache[k] = new Mat(1,1);
+    solver.step_cache[k].fromJSON(matjson);
   }
   letterToIndex = j['letterToIndex'];
   indexToLetter = j['indexToLetter'];
@@ -294,8 +290,12 @@ var ppl_list = [];
 
 var tick_iter = 0;
 
-var tick = () => {
+var stop_timer = () => {
   iid && clearTimeout(iid);
+};
+
+var tick = () => {
+  stop_timer();
   iid = setTimeout(() => {
     // sample sentence from data
     var sentix = randi(0, data_sents.length);
@@ -362,23 +362,21 @@ var gradCheck = () => {
   var eps = 0.000001;
 
   for(var k in model) {
-    if(model.hasOwnProperty(k)) {
-      var m = model[k]; // mat ref
-      for(var i=0,n=m.w.length;i<n;i++) {
-        
-        oldval = m.w[i];
-        m.w[i] = oldval + eps;
-        var c0 = costfun(model, sent);
-        m.w[i] = oldval - eps;
-        var c1 = costfun(model, sent);
-        m.w[i] = oldval;
+    var m = model[k]; // mat ref
+    for(var i=0,n=m.w.length;i<n;i++) {
+      
+      oldval = m.w[i];
+      m.w[i] = oldval + eps;
+      var c0 = costfun(model, sent);
+      m.w[i] = oldval - eps;
+      var c1 = costfun(model, sent);
+      m.w[i] = oldval;
 
-        var gnum = (c0.cost - c1.cost)/(2 * eps);
-        var ganal = m.dw[i];
-        var relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
-        if(relerr > 1e-1) {
-          console.log(k + ': numeric: ' + gnum + ', analytic: ' + ganal + ', err: ' + relerr);
-        }
+      var gnum = (c0.cost - c1.cost)/(2 * eps);
+      var ganal = m.dw[i];
+      var relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
+      if(relerr > 1e-1) {
+        console.log(k + ': numeric: ' + gnum + ', analytic: ' + ganal + ', err: ' + relerr);
       }
     }
   }
@@ -395,7 +393,7 @@ $(() => {
   });
 
   $('#stop').click(() => { 
-    iid && clearTimeout(iid);
+    stop_timer();
   });
   
   $("#resume").click(() => {
@@ -420,10 +418,48 @@ $(() => {
 
   $("#learn").click(); // simulate click on startup
 
-  $('#temperature_slider').on('change', function(){
+  $('#temperature_slider').on('input change', function(){
     sample_softmax_temperature = Math.pow(10, this.value);
     $("#temperature_text").text( sample_softmax_temperature.toFixed(2) );
   });
 
   //$('#gradcheck').click(gradCheck);
+
+  render_input_file_container();
 });
+
+var ChooseInputTextComponent = React.createClass({
+  load_input_file(input_file){
+    window.chosen_input_file = input_file;
+    reinit(tick);
+  },
+
+  render() {
+    return (
+      <ul className="ChooseInputTextComponent">
+        {this.props.input_files.map((input_file, ind) => {
+          let cls = cx({
+            "sel": this.props.chosen_input_file==input_file
+          });
+
+          return (
+            <li 
+              key={`input-file-${ind}`} 
+              onClick={this.load_input_file.bind(this, input_file)}
+              className={cls}
+            >
+              {input_file}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+});
+
+var render_input_file_container = () => {
+  React.render(
+    <ChooseInputTextComponent input_files={window.input_files} chosen_input_file={window.chosen_input_file} />, 
+    document.getElementById('choose_input_file')
+  );
+}
