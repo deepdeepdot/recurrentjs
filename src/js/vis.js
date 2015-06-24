@@ -4,15 +4,20 @@ import d3 from "d3-browserify";
 class Graph {
   
   constructor(selector, options={}){
-    let { step_horizon=1000 } = options;
+    this.graph = d3.select(selector);
+    this.reset();
+  }
 
-    this.step_horizon = step_horizon;
-    this.pts = [];
+  reset() {
+    this.pts && this.pts.length && this.clearGraph();
     
+    this.pts = [];
     this.maxy = -9999;
     this.miny = 9999;
+  }
 
-    this.graph = d3.select(selector);
+  clearGraph() {
+    this.graph.selectAll("*").remove();
   }
 
   add(step, y) {
@@ -41,7 +46,7 @@ class Graph {
       .x((d) => x(d.step))
       .y((d) => y(d.y));
     
-    this.graph.selectAll("*").remove();
+    this.clearGraph();
 
     let graph = this.graph.append("svg:svg")
       .attr("width", w + m.left + m.right)

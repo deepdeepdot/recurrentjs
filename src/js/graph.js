@@ -19,7 +19,7 @@ class Graph {
       fnc();
     }
   }
-
+  
   rowPluck(m, ix) {
     // pluck a row of m with index ix and return it as col vector
     assert(ix >= 0 && ix < m.n);

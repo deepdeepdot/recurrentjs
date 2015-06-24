@@ -293,61 +293,65 @@ var costfun = (model, sent) => {
 var ppl_list = [];
 
 var tick_iter = 0;
+
 var tick = () => {
-  // sample sentence from data
-  var sentix = randi(0, data_sents.length);
-  var sent = data_sents[sentix];
+  iid && clearTimeout(iid);
+  iid = setTimeout(() => {
+    // sample sentence from data
+    var sentix = randi(0, data_sents.length);
+    var sent = data_sents[sentix];
 
-  var t0 = +new Date();  // log start timestamp
+    var t0 = +new Date();  // log start timestamp
 
-  // evaluate cost function on a sentence
-  var cost_struct = costfun(model, sent);
-  
-  // use built up graph to compute backprop (set .dw fields in mats)
-  cost_struct.G.backward();
-  // perform param update
-  var solver_stats = solver.step(model, learning_rate, regc, clipval);
-  //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
+    // evaluate cost function on a sentence
+    var cost_struct = costfun(model, sent);
+    
+    // use built up graph to compute backprop (set .dw fields in mats)
+    cost_struct.G.backward();
+    // perform param update
+    var solver_stats = solver.step(model, learning_rate, regc, clipval);
+    //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
 
-  var t1 = +new Date();
-  var tick_time = t1 - t0;
+    var t1 = +new Date();
+    var tick_time = t1 - t0;
 
-  ppl_list.push(cost_struct.ppl); // keep track of perplexity
+    ppl_list.push(cost_struct.ppl); // keep track of perplexity
 
-  // evaluate now and then
-  tick_iter += 1;
+    // evaluate now and then
+    tick_iter += 1;
 
-  if(tick_iter % 50 === 0) {
-    // draw samples
-    $('#samples').html('');
-    for(var q=0;q<5;q++) {
-      var pred = predictSentence(model, true, sample_softmax_temperature);
-      var pred_div = '<div class="apred">'+pred+'</div>'
-      $('#samples').append(pred_div);
+    if(tick_iter % 50 === 0) {
+      // draw samples
+      $('#samples').html('');
+      for(var q=0;q<5;q++) {
+        var pred = predictSentence(model, true, sample_softmax_temperature);
+        var pred_div = '<div class="apred">'+pred+'</div>'
+        $('#samples').append(pred_div);
+      }
     }
-  }
-  if(tick_iter % 10 === 0) {
-    // draw argmax prediction
-    $('#argmax').html('');
-    var pred = predictSentence(model, false);
-    var pred_div = '<div class="apred">'+pred+'</div>'
-    $('#argmax').append(pred_div);
+    if(tick_iter % 10 === 0) {
+      // draw argmax prediction
+      $('#argmax').html('');
+      var pred = predictSentence(model, false);
+      var pred_div = '<div class="apred">'+pred+'</div>'
+      $('#argmax').append(pred_div);
 
-    // keep track of perplexity
-    $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
-    $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
-    $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
+      // keep track of perplexity
+      $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
+      $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
+      $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
 
-  }
-  
-  if(tick_iter % 100 === 0) {
-    var median_ppl = median(ppl_list);
-    ppl_list = [];
-    pplGraph.add(tick_iter, median_ppl);
-    pplGraph.drawSelf(document.getElementById("pplgraph"));
-  }
+    }
+    
+    if(tick_iter % 100 === 0) {
+      var median_ppl = median(ppl_list);
+      ppl_list = [];
+      pplGraph.add(tick_iter, median_ppl);
+      pplGraph.drawSelf(document.getElementById("pplgraph"));
+    }
 
-  iid = setTimeout(tick, 0);
+    tick();
+  }, 0);
 }
 
 var gradCheck = () => {
@@ -385,20 +389,17 @@ var iid = null;
 $(() => {
 
   // attach button handlers
-  $('#learn').click(() => { 
-    reinit(() => {
-      iid && clearTimeout(iid);
-      iid = setTimeout(tick, 0); 
-    });
+  $('#learn').click(() => {
+    pplGraph && pplGraph.reset();
+    reinit(tick);
   });
 
   $('#stop').click(() => { 
     iid && clearTimeout(iid);
-    iid = null;
   });
   
   $("#resume").click(() => {
-    !iid && (iid = setTimeout(tick, 0));
+    tick();
   });
 
   $("#savemodel").click(saveModel);

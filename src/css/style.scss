@@ -73,7 +73,12 @@ body {
   text-align: justify;
 }
 
-// graph
+input[type=range] {
+  width: 300px;
+}
+
+// d3 graph
+
 #pplgraph{
   path {
     stroke: steelblue;
