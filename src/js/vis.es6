@@ -14,7 +14,6 @@ class Graph {
     this.graph = d3.select("#pplgraph");
   }
 
-  // canv is the canvas we wish to update with this new datapoint
   add(step, y) {
     var time = +new Date(); // in ms
     if(y>this.maxy*0.99) this.maxy = y*1.05;
@@ -23,7 +22,6 @@ class Graph {
     this.pts.push({step, time, y});
   }
   
-  // elt is a canvas we wish to draw into
   drawSelf(canv) {
     if(this.pts.length < 2)
       return;
@@ -39,12 +37,8 @@ class Graph {
     var y = d3.scale.linear().domain([this.miny, this.maxy]).range([h, 0]);
       
     var line = d3.svg.line()
-      .x(function(d) { 
-        return x(d.step); 
-      })
-      .y(function(d) { 
-        return y(d.y); 
-      })
+      .x((d) => x(d.step))
+      .y((d) => y(d.y));
     
     this.graph.selectAll("*").remove();
 
@@ -79,8 +73,7 @@ class Graph {
       .attr("transform", `translate(0, 0)`)
       .call(yAxis);
     
-    graph.append("svg:path").attr("d", line(this.pts));
-    
+    graph.append("svg:path").attr("d", line(this.pts)); 
   }
 }
 
