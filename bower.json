@@ -14,10 +14,6 @@
     "tests"
   ],
   "dependencies": {
-    "jquery": "~2.1.4",
-    "jquery-ui": "~1.11.4",
-    "lodash": "~3.9.3",
-    "d3": "~3.5.5",
-    "react": "~0.13.3"
+    "jquery-ui": "~1.11.4"
   }
 }

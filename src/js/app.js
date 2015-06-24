@@ -1,9 +1,14 @@
-import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.es6";
-import Rvis from "./vis.es6";
-import {RandMat, Mat, softmax} from "./mat.es6";
-import {median, randi, maxi, samplei, gaussRandom} from "./math.es6";
-import Graph from "./graph.es6";
-import Solver from "./solver.es6";
+import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.js";
+import Rvis from "./vis.js";
+import {RandMat, Mat, softmax} from "./mat.js";
+import {median, randi, maxi, samplei, gaussRandom} from "./math.js";
+import Graph from "./graph.js";
+import Solver from "./solver.js";
+import React from "react";
+import _ from "lodash";
+import $ from "jquery";
+
+require("jquery-ui");
 
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
@@ -115,7 +120,7 @@ var reinit = (cb) => {
   reinit_learning_rate_slider();
 
   solver = new Solver(); // reinit solver
-  pplGraph = new Rvis.Graph();
+  pplGraph = new Rvis.Graph("#pplgraph");
 
   ppl_list = [];
   tick_iter = 0;
@@ -335,7 +340,7 @@ var tick = () => {
 
   }
   
-  if(tick_iter % 5 === 0) {
+  if(tick_iter % 100 === 0) {
     var median_ppl = median(ppl_list);
     ppl_list = [];
     pplGraph.add(tick_iter, median_ppl);

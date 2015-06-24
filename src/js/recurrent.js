@@ -1,8 +1,9 @@
-import {assert} from "./helper.es6";
-import {zeros} from "./math.es6";
-import {RandMat, Mat} from "./mat.es6";
-import Graph from "./graph.es6";
-import Solver from "./solver.es6";
+import {assert} from "./helper.js";
+import {zeros} from "./math.js";
+import {RandMat, Mat} from "./mat.js";
+import Graph from "./graph.js";
+import Solver from "./solver.js";
+import _ from "lodash";
 
 var initLSTM = (input_size, hidden_sizes, output_size) => {
   // hidden size should be a list

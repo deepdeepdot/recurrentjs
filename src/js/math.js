@@ -1,4 +1,4 @@
-import {assert} from "./helper.es6";
+import {assert} from "./helper.js";
 
 // Random numbers utils
 

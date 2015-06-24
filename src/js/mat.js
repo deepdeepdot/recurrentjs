@@ -1,5 +1,5 @@
-import {assert} from "./helper.es6";
-import {fillRandn, fillRand, zeros} from "./math.es6";
+import {assert} from "./helper.js";
+import {fillRandn, fillRand, zeros} from "./math.js";
 
 // Mat holds a matrix
 class Mat {

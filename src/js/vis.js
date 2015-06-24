@@ -1,8 +1,9 @@
+import d3 from "d3-browserify";
 // can be used to graph loss, or accuract over time
 
 class Graph {
   
-  constructor(options={}){    
+  constructor(selector, options={}){
     let { step_horizon=1000 } = options;
 
     this.step_horizon = step_horizon;
@@ -11,7 +12,7 @@ class Graph {
     this.maxy = -9999;
     this.miny = 9999;
 
-    this.graph = d3.select("#pplgraph");
+    this.graph = d3.select(selector);
   }
 
   add(step, y) {

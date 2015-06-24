@@ -1,6 +1,6 @@
-import {assert} from "./helper.es6";
-import {Mat} from "./mat.es6";
-import {sig} from "./math.es6";
+import {assert} from "./helper.js";
+import {Mat} from "./mat.js";
+import {sig} from "./math.js";
 
 // Transformer definitions
 class Graph {

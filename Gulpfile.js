@@ -11,7 +11,7 @@ var sass = require('gulp-sass');
 
 gulp.task("babelify", function(){
   browserify({
-    entries: "./src/js/app.es6",
+    entries: "./src/js/app.js",
     debug: true
   })
   .transform(babelify.configure({
@@ -20,7 +20,7 @@ gulp.task("babelify", function(){
   }))
   .bundle()
   .on("error", gutil.log)
-  .pipe(source("main.js"))
+  .pipe(source("app.js"))
   .pipe(gulp.dest("./dist"));
 });
 
@@ -36,7 +36,7 @@ gulp.task('sass', function () {
 });
 
 gulp.task("watch", function(){
-  gulp.watch(["src/js/**/*.es6"], ["babelify"]);
+  gulp.watch(["src/js/**/*.js"], ["babelify"]);
   gulp.watch(["src/css/**/*.scss"], ["sass"]);
 });
 
