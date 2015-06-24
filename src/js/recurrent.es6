@@ -1,4 +1,5 @@
-import {assert, zeros} from "./helper.es6";
+import {assert} from "./helper.es6";
+import {zeros} from "./math.es6";
 import {RandMat, Mat} from "./mat.es6";
 import Graph from "./graph.es6";
 import Solver from "./solver.es6";
@@ -14,25 +15,25 @@ var initLSTM = (input_size, hidden_sizes, output_size) => {
 
     // gates parameters
     _.assign(model, {
-      ['Wix'+d]: new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wih'+d]: new RandMat(hidden_size, hidden_size , 0, 0.08),
-      ['bi'+d]: new Mat(hidden_size, 1),
-      ['Wfx'+d]: new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wfh'+d]: new RandMat(hidden_size, hidden_size , 0, 0.08),
-      ['bf'+d]: new Mat(hidden_size, 1),
-      ['Wox'+d]: new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Woh'+d]: new RandMat(hidden_size, hidden_size , 0, 0.08),
-      ['bo'+d]: new Mat(hidden_size, 1),
-      ['Wcx'+d]: new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wch'+d]: new RandMat(hidden_size, hidden_size , 0, 0.08),
-      ['bc'+d]: new Mat(hidden_size, 1)
+      ['Wix'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
+      ['Wih'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['bi'+d]:   new Mat(hidden_size, 1),
+      ['Wfx'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
+      ['Wfh'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['bf'+d]:   new Mat(hidden_size, 1),
+      ['Wox'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
+      ['Woh'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['bo'+d]:   new Mat(hidden_size, 1),
+      ['Wcx'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
+      ['Wch'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['bc'+d]:   new Mat(hidden_size, 1)
     });
   }
 
   // decoder params
   _.assign(model, {
-    'Whd': new RandMat(output_size, hidden_size, 0, 0.08),
-    'bd': new Mat(output_size, 1)
+    'Whd':  new RandMat(output_size, hidden_size, 0, 0.08),
+    'bd':   new Mat(output_size, 1)
   });
   
   return model;
@@ -99,7 +100,8 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
   }
 
   // one decoder to outputs at end
-  var output = G.add(G.mul(model['Whd'], hidden[hidden.length - 1]),model['bd']);
+  let [, last_hidden] = hidden;
+  var output = G.add(G.mul(model['Whd'], last_hidden), model['bd']);
 
   // return cell memory, hidden representation and output
   return {'h':hidden, 'c':cell, 'o' : output};
@@ -139,6 +141,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   }
 
   var hidden = [];
+
   for(var d=0;d<hidden_sizes.length;d++) {
 
     var input_vector = d === 0 ? x : hidden[d-1];

@@ -8,6 +8,9 @@
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/jquery-ui/jquery-ui.js"></script>
     <script src="bower_components/lodash/lodash.js"></script>
+    <script src="bower_components/react/react.js"></script>
+    <script src="bower_components/d3/d3.js"></script>
+
     <script type="text/javascript" src="dist/main.js"></script>
   </head>
 
@@ -57,9 +60,9 @@
         clipval = 5.0; // clip gradients at this value
       </textarea>
 
-      <br />
-      protip: if your perplexity is exploding with Infinity try lowering the initial learning rate
-      <br>
+      <p>
+        protip: if your perplexity is exploding with Infinity try lowering the initial learning rate
+      </p>
       
       <div id="status">
         <div>
@@ -102,9 +105,10 @@
         </div>
         <textarea style="width:100%; height:200px;" id="tio"></textarea>
 
-        <br>
         <div class="hh">Pretrained model:</div>
-        You can also choose to load an example pretrained model with the button below to see what the predictions look like in later stages. The pretrained model is an LSTM with one layer of 100 units, trained for ~10 hours. After clicking button below you should see the perplexity plummet to about 3.0, and see the predictions become better.<br>
+        <p>
+          You can also choose to load an example pretrained model with the button below to see what the predictions look like in later stages. The pretrained model is an LSTM with one layer of 100 units, trained for ~10 hours. After clicking button below you should see the perplexity plummet to about 3.0, and see the predictions become better.
+        </p>
         <button id="loadpretrained" class="abutton">load pretrained</button>
       </div>
 

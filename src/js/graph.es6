@@ -1,8 +1,6 @@
 import {assert} from "./helper.es6";
 import {Mat} from "./mat.es6";
-
-// helper function for computing sigmoid
-let sig = (x) => 1.0/(1+Math.exp(-x));
+import {sig} from "./math.es6";
 
 // Transformer definitions
 class Graph {
@@ -17,8 +15,8 @@ class Graph {
   }
 
   backward() {
-    for(var i=this.backprop.length-1;i>=0;i--) {
-      this.backprop[i](); // tick!
+    for(let fnc of this.backprop){
+      fnc();
     }
   }
 
@@ -30,10 +28,12 @@ class Graph {
     for(var i=0,n=d;i<n;i++){ out.w[i] = m.w[d * ix + i]; } // copy over the data
 
     if(this.needs_backprop) {
-      var backward = () => {
-        for(var i=0,n=d;i<n;i++){ m.dw[d * ix + i] += out.dw[i]; }
+      let backward = () => {
+        for(let i=0,n=d;i<n;i++){
+          m.dw[d * ix + i] += out.dw[i]; 
+        }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -47,14 +47,14 @@ class Graph {
     }
 
     if(this.needs_backprop) {
-      var backward = function() {
-        for(var i=0;i<n;i++) {
+      let backward = function() {
+        for(let i=0;i<n;i++) {
           // grad for z = tanh(x) is (1 - z^2)
           var mwi = out.w[i];
           m.dw[i] += (1.0 - mwi * mwi) * out.dw[i];
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -75,7 +75,7 @@ class Graph {
           m.dw[i] += mwi * (1.0 - mwi) * out.dw[i];
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -88,11 +88,11 @@ class Graph {
     }
     if(this.needs_backprop) {
       let backward = () => {
-        for(var i=0;i<n;i++) {
+        for(let i=0;i<n;i++) {
           m.dw[i] += m.w[i] > 0 ? out.dw[i] : 0.0;
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -104,10 +104,10 @@ class Graph {
     var n = m1.n;
     var d = m2.d;
     var out = new Mat(n,d);
-    for(var i=0;i<m1.n;i++) { // loop over rows of m1
-      for(var j=0;j<m2.d;j++) { // loop over cols of m2
+    for(let i=0;i<m1.n;i++) { // loop over rows of m1
+      for(let j=0;j<m2.d;j++) { // loop over cols of m2
         var dot = 0.0;
-        for(var k=0;k<m1.d;k++) { // dot product loop
+        for(let k=0;k<m1.d;k++) { // dot product loop
           dot += m1.w[m1.d*i+k] * m2.w[m2.d*k+j];
         }
         out.w[d*i+j] = dot;
@@ -116,9 +116,9 @@ class Graph {
 
     if(this.needs_backprop) {
       let backward = () => {
-        for(var i=0;i<m1.n;i++) { // loop over rows of m1
-          for(var j=0;j<m2.d;j++) { // loop over cols of m2
-            for(var k=0;k<m1.d;k++) { // dot product loop
+        for(let i=0;i<m1.n;i++) { // loop over rows of m1
+          for(let j=0;j<m2.d;j++) { // loop over cols of m2
+            for(let k=0;k<m1.d;k++) { // dot product loop
               var b = out.dw[d*i+j];
               m1.dw[m1.d*i+k] += m2.w[m2.d*k+j] * b;
               m2.dw[m2.d*k+j] += m1.w[m1.d*i+k] * b;
@@ -126,7 +126,7 @@ class Graph {
           }
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -140,12 +140,12 @@ class Graph {
     }
     if(this.needs_backprop) {
       let backward = () => {
-        for(var i=0,n=m1.w.length;i<n;i++) {
+        for(let i=0,n=m1.w.length;i<n;i++) {
           m1.dw[i] += out.dw[i];
           m2.dw[i] += out.dw[i];
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }
@@ -153,18 +153,18 @@ class Graph {
   eltmul(m1, m2) {
     assert(m1.w.length === m2.w.length);
 
-    var out = new Mat(m1.n, m1.d);
-    for(var i=0,n=m1.w.length;i<n;i++) {
+    let out = new Mat(m1.n, m1.d);
+    for(let i=0,n=m1.w.length;i<n;i++) {
       out.w[i] = m1.w[i] * m2.w[i];
     }
     if(this.needs_backprop) {
       let backward = () => {
-        for(var i=0,n=m1.w.length;i<n;i++) {
+        for(let i=0,n=m1.w.length;i<n;i++) {
           m1.dw[i] += m2.w[i] * out.dw[i];
           m2.dw[i] += m1.w[i] * out.dw[i];
         }
       }
-      this.backprop.push(backward);
+      this.backprop.unshift(backward);
     }
     return out;
   }

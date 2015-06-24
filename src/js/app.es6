@@ -1,7 +1,7 @@
 import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.es6";
 import Rvis from "./vis.es6";
 import {RandMat, Mat, softmax} from "./mat.es6";
-import {randi, maxi, samplei, gaussRandom} from "./math.es6";
+import {median, randi, maxi, samplei, gaussRandom} from "./math.es6";
 import Graph from "./graph.es6";
 import Solver from "./solver.es6";
 
@@ -124,6 +124,7 @@ var reinit = (cb) => {
     var data_sents_raw = text.split('\n');
 
     data_sents = [];
+
     for(var i=0;i<data_sents_raw.length;i++) {
       var sent = data_sents_raw[i].trim();
       if(sent.length > 0) {
@@ -258,6 +259,7 @@ var costfun = (model, sent) => {
   var log2ppl = 0.0;
   var cost = 0.0;
   var prev = {};
+
   for(var i=-1;i<n;i++) {
     // start and end tokens are zeros
     var ix_source = i === -1 ? 0 : letterToIndex[sent[i]]; // first step: start with START token
@@ -281,19 +283,12 @@ var costfun = (model, sent) => {
   return {'G':G, 'ppl':ppl, 'cost':cost};
 }
 
-var median = (values) => {
-  values.sort((a,b) => a - b);
-  var half = Math.floor(values.length/2);
-  if(values.length % 2) return values[half];
-  else return (values[half-1] + values[half]) / 2.0;
-}
-
 var ppl_list = [];
+
 var tick_iter = 0;
 var tick = () => {
-
-  // sample sentence fromd data
-  var sentix = randi(0,data_sents.length);
+  // sample sentence from data
+  var sentix = randi(0, data_sents.length);
   var sent = data_sents[sentix];
 
   var t0 = +new Date();  // log start timestamp
@@ -342,6 +337,8 @@ var tick = () => {
       pplGraph.drawSelf(document.getElementById("pplgraph"));
     }
   }
+
+  iid = setTimeout(tick, 0);
 }
 
 var gradCheck = () => {
@@ -381,23 +378,22 @@ $(() => {
   // attach button handlers
   $('#learn').click(() => { 
     reinit(() => {
-      if(iid !== null) { clearInterval(iid); }
-      iid = setInterval(tick, 0); 
+      iid && clearTimeout(iid);
+      iid = setTimeout(tick, 0); 
     });
   });
 
   $('#stop').click(() => { 
-    if(iid !== null) { clearInterval(iid); }
+    iid && clearTimeout(iid);
     iid = null;
   });
   
   $("#resume").click(() => {
-    if(iid === null) {
-      iid = setInterval(tick, 0); 
-    }
+    !iid && (iid = setTimeout(tick, 0));
   });
 
   $("#savemodel").click(saveModel);
+
   $("#loadmodel").click(() => {
     var j = JSON.parse($("#tio").val());
     loadModel(j);

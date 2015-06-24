@@ -78,6 +78,31 @@ var maxi = (w) => {
   return maxix;
 }
 
+// helper function returns array of zeros of length n
+// and uses typed arrays if available
+let zeros = (n) => {
+  assert(!isNaN(n));
+
+  if(typeof ArrayBuffer === 'undefined') {
+    // lacking browser support
+    var arr = new Array(n);
+    for(var i=0;i<n;i++) { arr[i] = 0; }
+    return arr;
+  } else {
+    return new Float64Array(n);
+  }
+}
+
+let median = (values) => {
+  values.sort((a,b) => a - b);
+  var half = Math.floor(values.length/2);
+  if(values.length % 2) return values[half];
+  else return (values[half-1] + values[half]) / 2.0;
+}
+
+// helper function for computing sigmoid
+let sig = (x) => 1.0/(1+Math.exp(-x));
+
 export default {
 	fillRandn,
 	fillRand,
@@ -86,5 +111,8 @@ export default {
 	randn,
 	samplei,
 	maxi,
-  gaussRandom
+  gaussRandom,
+  zeros,
+  median,
+  sig
 }

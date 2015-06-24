@@ -1,14 +1,11 @@
-import {assert, zeros} from "./helper.es6";
-import {fillRandn, fillRand} from "./math.es6";
+import {assert} from "./helper.es6";
+import {fillRandn, fillRand, zeros} from "./math.es6";
 
 // Mat holds a matrix
 class Mat {
-  constructor(n,d) {
+  constructor(n, d) {
     // n is number of rows d is number of columns
-    this.n = n;
-    this.d = d;
-    this.w = zeros(n * d);
-    this.dw = zeros(n * d);
+    this.reset(n, d);
   }
 
   get(row, col) { 
@@ -26,6 +23,13 @@ class Mat {
     this.w[ix] = v; 
   }
   
+  reset(n, d) {
+    this.n = n;
+    this.d = d;
+    this.w = zeros(n * d);
+    this.dw = zeros(n * d);
+  }
+
   toJSON() {
     var json = {
       'n': this.n,
@@ -36,11 +40,10 @@ class Mat {
   }
   
   fromJSON(json) {
-    this.n = json.n;
-    this.d = json.d;
-    this.w = zeros(this.n * this.d);
-    this.dw = zeros(this.n * this.d);
-    for(var i=0,n=this.n * this.d;i<n;i++) {
+    let {n, d} = json
+    this.reset(n, d);
+
+    for(let i=0, t=(n * d); i<t; i++) {
       this.w[i] = json.w[i]; // copy over weights
     }
   }
