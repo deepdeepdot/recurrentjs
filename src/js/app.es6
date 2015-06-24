@@ -311,6 +311,7 @@ var tick = () => {
 
   // evaluate now and then
   tick_iter += 1;
+
   if(tick_iter % 50 === 0) {
     // draw samples
     $('#samples').html('');
@@ -332,12 +333,13 @@ var tick = () => {
     $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
     $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
 
-    if(tick_iter % 100 === 0) {
-      var median_ppl = median(ppl_list);
-      ppl_list = [];
-      pplGraph.add(tick_iter, median_ppl);
-      pplGraph.drawSelf(document.getElementById("pplgraph"));
-    }
+  }
+  
+  if(tick_iter % 5 === 0) {
+    var median_ppl = median(ppl_list);
+    ppl_list = [];
+    pplGraph.add(tick_iter, median_ppl);
+    pplGraph.drawSelf(document.getElementById("pplgraph"));
   }
 
   iid = setTimeout(tick, 0);

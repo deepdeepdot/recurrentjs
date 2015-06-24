@@ -73,7 +73,15 @@ class Graph {
       .attr("transform", `translate(0, 0)`)
       .call(yAxis);
     
-    graph.append("svg:path").attr("d", line(this.pts)); 
+    graph.selectAll('circle')
+      .data(this.pts)
+      .enter().append('circle')
+      .attr('cx', (d)=> x(d.step))
+      .attr('cy', (d)=> y(d.y))
+      .attr('r', 3); 
+    
+    graph.append("svg:path")
+      .attr("d", line(this.pts));
   }
 }
 
