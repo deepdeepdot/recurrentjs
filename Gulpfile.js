@@ -17,6 +17,7 @@ gulp.task("babelify", function(){
     debug: true
   })
   .transform(babelify.configure({
+    stage: 1,
     compact: false
   }))
   .bundle()

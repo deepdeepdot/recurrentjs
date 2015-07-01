@@ -1,13 +1,15 @@
-import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent.js";
+import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
 import Rvis from "./vis.js";
 import {RandMat, Mat, softmax} from "./mat.js";
-import {median, randi, maxi, samplei, gaussRandom} from "./math.js";
+import {median, randi, maxi, samplei, gaussRandom} from "./math";
 import Graph from "./graph.js";
 import Solver from "./solver.js";
 import React from "react";
 import {classSet as cx} from "react-addons";
 import _ from "lodash";
 import $ from "jquery";
+import ChooseInputTextComponent from "./components/choose_input_text_component"
+import Ticker from "./ticker";
 
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
@@ -109,11 +111,10 @@ var reinit_learning_rate_slider = () => {
 
 window.chosen_input_file = window.input_files[randi(0, window.input_files.length)];
 
-var reinit = (cb) => {
+var reinit = () => {
   // note: reinit writes global vars
   
   // eval options to set some globals
-  stop_timer();
 
   eval($("#newnet").val());
 
@@ -123,11 +124,11 @@ var reinit = (cb) => {
   pplGraph = new Rvis.Graph("#pplgraph");
 
   ppl_list = [];
-  tick_iter = 0;
+  ticker.reset();
 
   // process the input, filter out blanks
 
-  $.get(`/data/${chosen_input_file}`, (text) => {
+  return Promise.resolve($.get(`/data/${chosen_input_file}`)).then((text) => {
     $('#input_text').text(text);
 
     var data_sents_raw = text.split('\n');
@@ -145,9 +146,7 @@ var reinit = (cb) => {
     model = initModel();
 
     render_input_file_container();
-    cb && cb();
   });
-
 }
 
 var saveModel = () => {
@@ -288,71 +287,57 @@ var costfun = (model, sent) => {
 
 var ppl_list = [];
 
-var tick_iter = 0;
+var cost_struct, solver_stats;
 
-var stop_timer = () => {
-  iid && clearTimeout(iid);
-};
+var ticker = new Ticker(function() {
+  // sample sentence from data
 
-var tick = () => {
-  stop_timer();
-  iid = setTimeout(() => {
-    // sample sentence from data
-    var sentix = randi(0, data_sents.length);
-    var sent = data_sents[sentix];
+  var sentix = randi(0, data_sents.length);
+  var sent = data_sents[sentix];
 
-    var t0 = +new Date();  // log start timestamp
+  // evaluate cost function on a sentence
+  cost_struct = costfun(model, sent);
+  
+  // use built up graph to compute backprop (set .dw fields in mats)
+  cost_struct.G.backward();
+  // perform param update
+  solver_stats = solver.step(model, learning_rate, regc, clipval);
+  //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
 
-    // evaluate cost function on a sentence
-    var cost_struct = costfun(model, sent);
-    
-    // use built up graph to compute backprop (set .dw fields in mats)
-    cost_struct.G.backward();
-    // perform param update
-    var solver_stats = solver.step(model, learning_rate, regc, clipval);
-    //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
+  ppl_list.push(cost_struct.ppl); // keep track of perplexity
 
-    var t1 = +new Date();
-    var tick_time = t1 - t0;
+  // evaluate now and then
+});
 
-    ppl_list.push(cost_struct.ppl); // keep track of perplexity
+ticker.every(50, function(){
+  // draw samples
+  $('#samples').html('');
+  for(var q=0;q<5;q++) {
+    var pred = predictSentence(model, true, sample_softmax_temperature);
+    var pred_div = '<div class="apred">'+pred+'</div>'
+    $('#samples').append(pred_div);
+  }
+});
 
-    // evaluate now and then
-    tick_iter += 1;
+ticker.every(10, function(){
+  // draw argmax prediction
+  $('#argmax').html('');
+  var pred = predictSentence(model, false);
+  var pred_div = '<div class="apred">'+pred+'</div>'
+  $('#argmax').append(pred_div);
 
-    if(tick_iter % 50 === 0) {
-      // draw samples
-      $('#samples').html('');
-      for(var q=0;q<5;q++) {
-        var pred = predictSentence(model, true, sample_softmax_temperature);
-        var pred_div = '<div class="apred">'+pred+'</div>'
-        $('#samples').append(pred_div);
-      }
-    }
-    if(tick_iter % 10 === 0) {
-      // draw argmax prediction
-      $('#argmax').html('');
-      var pred = predictSentence(model, false);
-      var pred_div = '<div class="apred">'+pred+'</div>'
-      $('#argmax').append(pred_div);
-
-      // keep track of perplexity
-      $('#epoch').text('epoch: ' + (tick_iter/epoch_size).toFixed(2));
-      $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
-      $('#ticktime').text('forw/bwd time per example: ' + tick_time.toFixed(1) + 'ms');
-
-    }
-    
-    if(tick_iter % 100 === 0) {
-      var median_ppl = median(ppl_list);
-      ppl_list = [];
-      pplGraph.add(tick_iter, median_ppl);
-      pplGraph.drawSelf(document.getElementById("pplgraph"));
-    }
-
-    tick();
-  }, 0);
-}
+  // keep track of perplexity
+  $('#epoch').text('epoch: ' + (this.tick_iter/epoch_size).toFixed(2));
+  $('#ppl').text('perplexity: ' + cost_struct.ppl.toFixed(2));
+  $('#ticktime').text('forw/bwd time per example: ' + this.tick_time.toFixed(1) + 'ms');
+});
+  
+ticker.every(100, function(){
+  var median_ppl = median(ppl_list);
+  ppl_list = [];
+  pplGraph.add(this.tick_iter, median_ppl);
+  pplGraph.drawSelf(document.getElementById("pplgraph"));
+});
 
 var gradCheck = () => {
   var model = initModel();
@@ -382,22 +367,23 @@ var gradCheck = () => {
   }
 }
 
-var iid = null;
-
 $(() => {
 
   // attach button handlers
   $('#learn').click(() => {
     pplGraph && pplGraph.reset();
-    reinit(tick);
+    
+    reinit().then(()=>{
+      ticker.start();
+    });
   });
 
   $('#stop').click(() => { 
-    stop_timer();
+    ticker.stop();
   });
   
   $("#resume").click(() => {
-    tick();
+    ticker.start();
   });
 
   $("#savemodel").click(saveModel);
@@ -428,38 +414,21 @@ $(() => {
   render_input_file_container();
 });
 
-var ChooseInputTextComponent = React.createClass({
-  load_input_file(input_file){
-    window.chosen_input_file = input_file;
-    reinit(tick);
-  },
-
-  render() {
-    return (
-      <ul className="ChooseInputTextComponent">
-        {this.props.input_files.map((input_file, ind) => {
-          let cls = cx({
-            "sel": this.props.chosen_input_file==input_file
-          });
-
-          return (
-            <li 
-              key={`input-file-${ind}`} 
-              onClick={this.load_input_file.bind(this, input_file)}
-              className={cls}
-            >
-              {input_file}
-            </li>
-          );
-        })}
-      </ul>
-    );
-  }
-});
+var set_input_file = (input_file) => {
+  window.chosen_input_file = input_file;
+  
+  reinit().then(()=>{
+    ticker.start();
+  });
+};
 
 var render_input_file_container = () => {
   React.render(
-    <ChooseInputTextComponent input_files={window.input_files} chosen_input_file={window.chosen_input_file} />, 
+    <ChooseInputTextComponent 
+      input_files={window.input_files} 
+      chosen_input_file={window.chosen_input_file} 
+      callback={set_input_file}
+      />, 
     document.getElementById('choose_input_file')
   );
 }
