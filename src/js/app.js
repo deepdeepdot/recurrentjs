@@ -1,15 +1,18 @@
+import _ from "lodash";
+import $ from "jquery";
+
 import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
 import Rvis from "./vis.js";
 import {RandMat, Mat, softmax} from "./mat.js";
 import {median, randi, maxi, samplei, gaussRandom} from "./math";
 import Graph from "./graph.js";
 import Solver from "./solver.js";
+import Ticker from "./ticker";
+
 import React from "react";
 import {classSet as cx} from "react-addons";
-import _ from "lodash";
-import $ from "jquery";
-import ChooseInputTextComponent from "./components/choose_input_text_component"
-import Ticker from "./ticker";
+import ChooseInputTextComponent from "./components/choose_input_text_component";
+import Slider from "./components/slider";
 
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
@@ -91,24 +94,6 @@ var initModel = () => {
   return model;
 }
 
-var reinit_learning_rate_slider = () => {
-  // init learning rate slider for controlling the decay
-  // note that learning_rate is a global variable
-
-  // #lr_slider values
-  // min: Math.log10(0.01) - 3.0
-  // max: Math.log10(0.01) + 0.05
-  // step: 0.05
-  // value: Math.log10(learning_rate)
-
-  $("#lr_slider").on('input change', function(){
-    learning_rate = Math.pow(10, this.value);
-    $("#lr_text").text(learning_rate.toFixed(5));
-  });
-
-  $("#lr_text").text(learning_rate.toFixed(5));
-}
-
 window.chosen_input_file = window.input_files[randi(0, window.input_files.length)];
 
 var reinit = () => {
@@ -118,7 +103,7 @@ var reinit = () => {
 
   eval($("#newnet").val());
 
-  reinit_learning_rate_slider();
+  render_learning_slider();
 
   solver = new Solver(); // reinit solver
   pplGraph = new Rvis.Graph("#pplgraph");
@@ -292,8 +277,8 @@ var cost_struct, solver_stats;
 var ticker = new Ticker(function() {
   // sample sentence from data
 
-  var sentix = randi(0, data_sents.length);
-  var sent = data_sents[sentix];
+  let sentix = randi(0, data_sents.length);
+  let sent = data_sents[sentix];
 
   // evaluate cost function on a sentence
   cost_struct = costfun(model, sent);
@@ -397,21 +382,18 @@ $(() => {
     $.getJSON("saved_states/lstm_100_model.json", (data) => {
       pplGraph = new Rvis.Graph();
       learning_rate = 0.0001;
-      reinit_learning_rate_slider();
+      render_learning_slider();
       loadModel(data);
     });
   });
 
   $("#learn").click(); // simulate click on startup
 
-  $('#temperature_slider').on('input change', function(){
-    sample_softmax_temperature = Math.pow(10, this.value);
-    $("#temperature_text").text( sample_softmax_temperature.toFixed(2) );
-  });
-
   //$('#gradcheck').click(gradCheck);
-
+  
+  render_learning_slider();
   render_input_file_container();
+  render_temperature_slider();
 });
 
 var set_input_file = (input_file) => {
@@ -421,6 +403,57 @@ var set_input_file = (input_file) => {
     ticker.start();
   });
 };
+
+var learning_rate = 0.0001;
+
+var render_learning_slider = () => {
+  let callback = (value) => {
+    learning_rate = Math.pow(10, value);
+    render_learning_slider();
+  };
+
+  let transform_text = (value) => {
+    return Math.pow(10, value).toFixed(5);
+  };
+
+  React.render(
+    <Slider
+      min={Math.log10(0.01) - 3.0}
+      max={Math.log10(0.01) + 0.05}
+      step={0.05}
+      value={Math.log10(learning_rate)}
+      slider_description="Learning rate: you want to anneal this over time if you're training for longer time."
+      callback={callback}
+      transform_text={transform_text}
+    />
+  , document.getElementById('learning_slider'));
+}
+
+var sample_softmax_temperature = 1;
+
+var render_temperature_slider = () => {
+  let callback = (value) => {
+    sample_softmax_temperature = Math.pow(10, value);
+    render_temperature_slider();  
+  };
+
+  let transform_text = (value)=> {
+    return Math.pow(10, value).toFixed(2);
+  }
+
+  React.render(
+    <Slider 
+      value={Math.log10(sample_softmax_temperature)} 
+      min={-1} 
+      max={1.05} 
+      step={0.05} 
+      callback={callback} 
+      transform_text={transform_text} 
+      slider_description="Softmax sample temperature: lower setting will generate more likely predictions, but you'll see more of the same common words again and again. Higher setting will generate less frequent words but you might see more spelling errors."
+    />,
+    document.getElementById('temperature_slider')
+  );
+}
 
 var render_input_file_container = () => {
   React.render(

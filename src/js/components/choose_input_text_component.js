@@ -1,7 +1,8 @@
 import React from "react";
 import {classSet as cx} from "react-addons";
 
-var ChooseInputTextComponent = React.createClass({
+let ChooseInputTextComponent = React.createClass({
+
   load_input_file(input_file){
     this.props.callback && this.props.callback(input_file);
   },

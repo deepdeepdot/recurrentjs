@@ -60,10 +60,7 @@
         <div id="status">
           <div>
             <div class="hh">Training stats:</div>
-            <div class="aslider">
-              <div class="slider_header">Learning rate: you want to anneal this over time if you're training for longer time.</div>
-              <input id="lr_slider" type="range" min="-5" max="-1.95" step="0.05" value="-2"/>
-              <div class="slider_value" id="lr_text"></div>
+            <div class="aslider" id="learning_slider">
             </div>
 
             <div id="pplgraph"></div>
@@ -77,11 +74,7 @@
 
           <div class="hh">Model samples:</div>
           <div id="controls">
-            <div class="aslider">
-              <div class="slider_header">Softmax sample temperature: lower setting will generate more likely predictions, but you'll see more of the same common words again and again. Higher setting will generate less frequent words but you might see more spelling errors.</div>
-              <input id="temperature_slider" type="range" min="-1" max="1.05" step="0.05" value="0"/>
-              <div class="slider_value" id="temperature_text"></div>
-            </div>
+            <div class="aslider" id="temperature_slider"></div>
           </div>
           <div id="samples"></div>
           <div class="hh">Greedy argmax prediction:</div>

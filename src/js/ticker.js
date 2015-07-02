@@ -22,7 +22,7 @@ class Ticker {
 				
 				this.tick_time = benchmark(this.fnc);
 
-				for(let ms of Object.keys(this.schedule)){
+				for(let ms in this.schedule){
 					if (this.tick_iter % ms !== 0)
 						continue;
 					

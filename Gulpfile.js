@@ -6,6 +6,7 @@ var babelify = require("babelify");
 var browserify = require("browserify");
 var source = require("vinyl-source-stream");
 var gutil = require("gulp-util");
+var addsrc = require("gulp-add-src");
 var concat = require("gulp-concat");
 var sass = require('gulp-sass');
 var template = require('gulp-template');
@@ -18,7 +19,8 @@ gulp.task("babelify", function(){
   })
   .transform(babelify.configure({
     stage: 1,
-    compact: false
+    compact: false,
+    optional: ['runtime']
   }))
   .bundle()
   .on("error", gutil.log)

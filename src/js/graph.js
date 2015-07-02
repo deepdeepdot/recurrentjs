@@ -15,6 +15,9 @@ class Graph {
   }
 
   backward() {
+    if(!this.needs_backprop)
+      return;
+    
     for(let fnc of this.backprop){
       fnc();
     }

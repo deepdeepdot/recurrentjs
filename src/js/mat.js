@@ -62,14 +62,21 @@ var RandMat = (n,d,mu,std) => {
 var softmax = (m) => {
   var out = new Mat(m.n, m.d); // probability volume
   var maxval = -999999;
-  for(var i=0,n=m.w.length;i<n;i++) { if(m.w[i] > maxval) maxval = m.w[i]; }
+  
+  for(var i=0,n=m.w.length;i<n;i++) { 
+    if(m.w[i] > maxval) maxval = m.w[i]; 
+  }
 
   var s = 0.0;
+  
   for(var i=0,n=m.w.length;i<n;i++) { 
     out.w[i] = Math.exp(m.w[i] - maxval);
     s += out.w[i];
   }
-  for(var i=0,n=m.w.length;i<n;i++) { out.w[i] /= s; }
+  
+  for(var i=0,n=m.w.length;i<n;i++) { 
+    out.w[i] /= s; 
+  }
 
   // no backward pass here needed
   // since we will use the computed probabilities outside
