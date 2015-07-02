@@ -27,7 +27,7 @@ var indexToLetter = {};
 var vocab = [];
 var data_sents = [];
 var solver = new Solver(); // should be class because it needs memory for step caches
-var pplGraph = new Rvis.Graph();
+var pplGraph;
 
 var generator, hidden_sizes, letter_size, regc, learning_rate, clipval, ch, lh, logprobs, probs, step_cache_out, step_cache;
 
@@ -102,11 +102,12 @@ var reinit = () => {
   // eval options to set some globals
 
   eval($("#newnet").val());
-
+  
   render_learning_slider();
 
   solver = new Solver(); // reinit solver
-  pplGraph = new Rvis.Graph("#pplgraph");
+  pplGraph = pplGraph || new Rvis.Graph("#pplgraph");
+  pplGraph.reset();
 
   ppl_list = [];
   ticker.reset();
@@ -380,7 +381,7 @@ $(() => {
 
   $("#loadpretrained").click(() => {
     $.getJSON("saved_states/lstm_100_model.json", (data) => {
-      pplGraph = new Rvis.Graph();
+      pplGraph = pplGraph || new Rvis.Graph();
       learning_rate = 0.0001;
       render_learning_slider();
       loadModel(data);
