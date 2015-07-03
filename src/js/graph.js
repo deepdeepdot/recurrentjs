@@ -18,98 +18,138 @@ class Graph {
     if(!this.needs_backprop)
       return;
     
-    for(let fnc of this.backprop){
-      fnc();
+    let gate;
+
+    while(gate = this.backprop.pop()){
+      gate.backward();
     }
   }
   
   rowPluck(m, ix) {
     // pluck a row of m with index ix and return it as col vector
     assert(ix >= 0 && ix < m.n);
-    var d = m.d;
-    var out = new Mat(d, 1);
-    for(var i=0,n=d;i<n;i++){ out.w[i] = m.w[d * ix + i]; } // copy over the data
-
-    if(this.needs_backprop) {
-      let backward = () => {
-        for(let i=0,n=d;i<n;i++){
-          m.dw[d * ix + i] += out.dw[i]; 
-        }
-      }
-      this.backprop.unshift(backward);
-    }
-    return out;
+    
+    let gate = new RowPluckGate(m, ix);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
   }
 
   tanh(m) {
     // tanh nonlinearity
-    var out = new Mat(m.n, m.d);
-    var n = m.w.length;
-    for(var i=0;i<n;i++) { 
-      out.w[i] = Math.tanh(m.w[i]);
-    }
-
-    if(this.needs_backprop) {
-      let backward = function() {
-        for(let i=0;i<n;i++) {
-          // grad for z = tanh(x) is (1 - z^2)
-          var mwi = out.w[i];
-          m.dw[i] += (1.0 - mwi * mwi) * out.dw[i];
-        }
-      }
-      this.backprop.unshift(backward);
-    }
-    return out;
+    let gate = new TanhGate(m);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
   }
 
   sigmoid(m) {
     // sigmoid nonlinearity
-    var out = new Mat(m.n, m.d);
-    var n = m.w.length;
-    for(var i=0;i<n;i++) { 
-      out.w[i] = sig(m.w[i]);
-    }
-
-    if(this.needs_backprop) {
-      let backward = function() {
-        for(var i=0;i<n;i++) {
-          // grad for z = tanh(x) is (1 - z^2)
-          var mwi = out.w[i];
-          m.dw[i] += mwi * (1.0 - mwi) * out.dw[i];
-        }
-      }
-      this.backprop.unshift(backward);
-    }
-    return out;
+    let gate = new SigmoidGate(m);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
   }
 
   relu(m) {
-    var out = new Mat(m.n, m.d);
-    var n = m.w.length;
-    for(var i=0;i<n;i++) { 
-      out.w[i] = Math.max(0, m.w[i]); // relu
-    }
-    if(this.needs_backprop) {
-      let backward = () => {
-        for(let i=0;i<n;i++) {
-          m.dw[i] += m.w[i] > 0 ? out.dw[i] : 0.0;
-        }
-      }
-      this.backprop.unshift(backward);
-    }
-    return out;
+    let gate = new ReluGate(m);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
   }
 
   mul(m1, m2) {
     // multiply matrices m1 * m2
     assert(m1.d === m2.n, 'matmul dimensions misaligned');
 
-    var n = m1.n;
-    var d = m2.d;
-    var out = new Mat(n,d);
+    let gate = new MulGate(m1, m2);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
+  }
+
+  add(m1, m2) {
+    assert(m1.w.length === m2.w.length);
+
+    let gate = new AddGate(m1, m2);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
+  }
+
+  eltmul(m1, m2) {
+    assert(m1.w.length === m2.w.length);
+
+    let gate = new EltmulGate(m1, m2);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
+  }
+}
+
+class EltmulGate {
+  constructor(m1, m2) {
+    this.props = {m1, m2};
+  }
+
+  forward() {
+    let {m1, m2} = this.props;
+    let out = new Mat(m1.n, m1.d);
+    for(let i=0,n=m1.w.length;i<n;i++) {
+      out.w[i] = m1.w[i] * m2.w[i];
+    }
+    this.props.out = out;
+  }
+
+  backward() {
+    let {m1, m2, out} = this.props;
+
+    for(let i=0,n=m1.w.length;i<n;i++) {
+      m1.dw[i] += m2.w[i] * out.dw[i];
+      m2.dw[i] += m1.w[i] * out.dw[i];
+    }
+  }
+}
+class AddGate {
+  constructor(m1, m2) {
+    this.props = {m1, m2};
+  }
+
+  forward() {
+    let {m1, m2} = this.props;
+    
+    let  out = new Mat(m1.n, m1.d);
+    for(let i=0,n=m1.w.length;i<n;i++) {
+      out.w[i] = m1.w[i] + m2.w[i];
+    }
+    this.props.out = out;
+  }
+  
+  backward() {
+    let {m1, m2, out} = this.props;
+
+    for(let i=0,n=m1.w.length;i<n;i++) {
+      m1.dw[i] += out.dw[i];
+      m2.dw[i] += out.dw[i];
+    }
+  }
+}
+
+class MulGate {
+  constructor(m1, m2) {
+    this.props = {m1, m2};
+  }
+
+  forward() {
+    let {m1, m2} = this.props;
+    let n = m1.n;
+    let d = m2.d;
+
+    let out = new Mat(n,d);
+
     for(let i=0;i<m1.n;i++) { // loop over rows of m1
       for(let j=0;j<m2.d;j++) { // loop over cols of m2
-        var dot = 0.0;
+        let dot = 0.0;
         for(let k=0;k<m1.d;k++) { // dot product loop
           dot += m1.w[m1.d*i+k] * m2.w[m2.d*k+j];
         }
@@ -117,59 +157,126 @@ class Graph {
       }
     }
 
-    if(this.needs_backprop) {
-      let backward = () => {
-        for(let i=0;i<m1.n;i++) { // loop over rows of m1
-          for(let j=0;j<m2.d;j++) { // loop over cols of m2
-            for(let k=0;k<m1.d;k++) { // dot product loop
-              var b = out.dw[d*i+j];
-              m1.dw[m1.d*i+k] += m2.w[m2.d*k+j] * b;
-              m2.dw[m2.d*k+j] += m1.w[m1.d*i+k] * b;
-            }
-          }
-        }
-      }
-      this.backprop.unshift(backward);
-    }
-    return out;
+    this.props.out = out;
   }
 
-  add(m1, m2) {
-    assert(m1.w.length === m2.w.length);
+  backward() {
+    let {m1, m2, out} = this.props;
+    var n = m1.n;
+    var d = m2.d;
 
-    var out = new Mat(m1.n, m1.d);
-    for(var i=0,n=m1.w.length;i<n;i++) {
-      out.w[i] = m1.w[i] + m2.w[i];
-    }
-    if(this.needs_backprop) {
-      let backward = () => {
-        for(let i=0,n=m1.w.length;i<n;i++) {
-          m1.dw[i] += out.dw[i];
-          m2.dw[i] += out.dw[i];
+    for(let i=0;i<m1.n;i++) { // loop over rows of m1
+      for(let j=0;j<m2.d;j++) { // loop over cols of m2
+        for(let k=0;k<m1.d;k++) { // dot product loop
+          let b = out.dw[d*i+j];
+          m1.dw[m1.d*i+k] += m2.w[m2.d*k+j] * b;
+          m2.dw[m2.d*k+j] += m1.w[m1.d*i+k] * b;
         }
       }
-      this.backprop.unshift(backward);
     }
-    return out;
+  }
+}
+
+class ReluGate {
+  constructor(m) {
+    this.props = {m};
   }
 
-  eltmul(m1, m2) {
-    assert(m1.w.length === m2.w.length);
+  forward() {
+    let {m} = this.props;
+    let out = new Mat(m.n, m.d);
+    let n = m.w.length;
+    for(let i=0;i<n;i++) { 
+      out.w[i] = Math.max(0, m.w[i]); // relu
+    }
+    
+    this.props.out = out;
+  }
 
-    let out = new Mat(m1.n, m1.d);
-    for(let i=0,n=m1.w.length;i<n;i++) {
-      out.w[i] = m1.w[i] * m2.w[i];
+  backward() {
+    let {m, out} = this.props;
+    for(let i=0;i<n;i++) {
+      m.dw[i] += m.w[i] > 0 ? out.dw[i] : 0.0;
     }
-    if(this.needs_backprop) {
-      let backward = () => {
-        for(let i=0,n=m1.w.length;i<n;i++) {
-          m1.dw[i] += m2.w[i] * out.dw[i];
-          m2.dw[i] += m1.w[i] * out.dw[i];
-        }
-      }
-      this.backprop.unshift(backward);
+  }
+}
+
+class SigmoidGate {
+  constructor(m) {
+    this.props = {m};
+  }
+
+  forward() {
+    let {m} = this.props;  
+    let out = new Mat(m.n, m.d);
+    let n = m.w.length;
+    for(let i=0;i<n;i++) { 
+      out.w[i] = sig(m.w[i]);
     }
-    return out;
+    this.props.out = out;
+  }
+
+  backward() {
+    let {m, out} = this.props;
+    let n = m.w.length;
+    for(let i=0;i<n;i++) {
+      // grad for z = tanh(x) is (1 - z^2)
+      let mwi = out.w[i];
+      m.dw[i] += mwi * (1.0 - mwi) * out.dw[i];
+    }
+  }
+}
+
+class TanhGate {
+  constructor(m) {
+    this.props = {m};
+  }
+
+  forward() {
+    let {m} = this.props;
+    let out = new Mat(m.n, m.d);
+    let n = m.w.length;
+
+    for(let i=0;i<n;i++) { 
+      out.w[i] = Math.tanh(m.w[i]);
+    }
+    this.props.out = out;
+  }
+
+  backward() {
+    let {m, out} = this.props;
+    let n = m.w.length;
+
+    for(let i=0;i<n;i++) {
+      // grad for z = tanh(x) is (1 - z^2)
+      let mwi = out.w[i];
+      m.dw[i] += (1.0 - mwi * mwi) * out.dw[i];
+    }
+  }
+}
+
+class RowPluckGate {
+  constructor(m, ix){
+    this.props = {m, ix};
+  }
+
+  forward(){
+    let {m, ix} = this.props;
+
+    let d = m.d;
+    let out = new Mat(d, 1);
+    for(let i=0,n=d;i<n;i++){ out.w[i] = m.w[d * ix + i]; } // copy over the data
+    
+    this.props.out = out;
+  }
+
+  backward(){
+    let {m, ix, out} = this.props;
+    let d = m.d;
+
+    for(let i=0,n=d;i<n;i++){
+      m.dw[d * ix + i] += out.dw[i]; 
+    }
   }
 }
 

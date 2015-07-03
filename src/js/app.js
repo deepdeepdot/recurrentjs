@@ -191,10 +191,13 @@ var loadModel = (j) => {
 var forwardIndex = (G, model, ix, prev) => {
   var x = G.rowPluck(model['Wil'], ix);
   // forward prop the sequence learner
+
+  let out_struct;
+
   if(generator === 'rnn') {
-    var out_struct = forwardRNN(G, model, hidden_sizes, x, prev);
+    out_struct = forwardRNN(G, model, hidden_sizes, x, prev);
   } else {
-    var out_struct = forwardLSTM(G, model, hidden_sizes, x, prev);
+    out_struct = forwardLSTM(G, model, hidden_sizes, x, prev);
   }
   return out_struct;
 }
@@ -268,7 +271,7 @@ var costfun = (model, sent) => {
     logprobs.dw[ix_target] -= 1
   }
   var ppl = Math.pow(2, log2ppl / (n - 1));
-  return {'G':G, 'ppl':ppl, 'cost':cost};
+  return {G, ppl, cost};
 }
 
 var ppl_list = [];
@@ -295,7 +298,7 @@ var ticker = new Ticker(function() {
   // evaluate now and then
 });
 
-ticker.every(50, function(){
+ticker.every(100, function(){
   // draw samples
   $('#samples').html('');
   for(var q=0;q<5;q++) {
@@ -305,7 +308,7 @@ ticker.every(50, function(){
   }
 });
 
-ticker.every(10, function(){
+ticker.every(20, function(){
   // draw argmax prediction
   $('#argmax').html('');
   var pred = predictSentence(model, false);
@@ -318,11 +321,11 @@ ticker.every(10, function(){
   $('#ticktime').text('forw/bwd time per example: ' + this.tick_time.toFixed(1) + 'ms');
 });
   
-ticker.every(100, function(){
+ticker.every(200, function(){
   var median_ppl = median(ppl_list);
   ppl_list = [];
   pplGraph.add(this.tick_iter, median_ppl);
-  pplGraph.drawSelf(document.getElementById("pplgraph"));
+  pplGraph.drawSelf();
 });
 
 var gradCheck = () => {
