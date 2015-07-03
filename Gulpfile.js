@@ -19,7 +19,8 @@ gulp.task("babelify", function(){
   })
   .transform(babelify.configure({
     stage: 1,
-    compact: false
+    compact: false,
+    loose: "all"
   }))
   .bundle()
   .on("error", gutil.log)

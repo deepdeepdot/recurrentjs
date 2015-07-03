@@ -270,9 +270,7 @@ var cost_struct, solver_stats;
 
 var ticker = new Ticker(function() {
   // sample sentence from data
-
-  let sentix = randi(0, data_sents.length);
-  let sent = data_sents[sentix];
+  let sent = _.sample(data_sents)
 
   // evaluate cost function on a sentence
   cost_struct = costfun(model, sent);
@@ -284,7 +282,6 @@ var ticker = new Ticker(function() {
   solver_stats = solver.step(model, learning_rate, regc, clipval);
   
   //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
-
   ppl_list.push(cost_struct.ppl); // keep track of perplexity
 
   // evaluate now and then
