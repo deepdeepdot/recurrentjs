@@ -25,6 +25,15 @@ body {
   font-size: 20px;
 }
 
+#samples {
+  display: block;
+  white-space: pre;
+  padding: 5px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5em;
+}
+
 .apred {
   padding: 2px;
   margin: 5px;

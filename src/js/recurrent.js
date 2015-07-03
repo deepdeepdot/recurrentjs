@@ -5,6 +5,14 @@ import Graph from "./graph.js";
 import Solver from "./solver.js";
 import _ from "lodash";
 
+var forwardIndex = (G, model, ix, prev, generator, hidden_sizes) => {
+  var x = G.rowPluck(model['Wil'], ix);
+  // forward prop the sequence learner
+
+  let fnc = (generator==='rnn') ? forwardRNN : forwardLSTM;
+  return fnc(G, model, hidden_sizes, x, prev);
+}
+
 var initLSTM = (input_size, hidden_sizes, output_size) => {
   // hidden size should be a list
 
@@ -163,6 +171,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
 }
 
 export default {
+  forwardIndex,
   forwardLSTM,
   initLSTM,
   forwardRNN,

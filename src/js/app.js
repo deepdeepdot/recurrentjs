@@ -1,7 +1,8 @@
 import _ from "lodash";
 import $ from "jquery";
+import work from "webworkify";
 
-import {forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
+import {forwardIndex, forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
 import Rvis from "./vis.js";
 import {RandMat, Mat, softmax} from "./mat.js";
 import {median, randi, maxi, samplei, gaussRandom} from "./math";
@@ -16,7 +17,6 @@ import Slider from "./components/slider";
 
 // prediction params
 var sample_softmax_temperature = 1.0; // how peaky model predictions should be
-var max_chars_gen = 100; // max length of generated sentences
 
 // various global var inits
 var epoch_size = -1;
@@ -184,53 +184,6 @@ var loadModel = (j) => {
   tick_iter = 0;
 }
 
-var forwardIndex = (G, model, ix, prev) => {
-  var x = G.rowPluck(model['Wil'], ix);
-  // forward prop the sequence learner
-
-  let fnc = (generator==='rnn') ? forwardRNN : forwardLSTM;
-  return fnc(G, model, hidden_sizes, x, prev);
-}
-
-var predictSentence = (model, samplei_bool=false, temperature=1.0) => {
-  var G = new Graph(false);
-  var s = '';
-  var prev = {};
-  while(true) {
-
-    // RNN tick
-    var ix = s.length === 0 ? 0 : letterToIndex[s[s.length-1]];
-    var lh = forwardIndex(G, model, ix, prev);
-    prev = lh;
-
-    // sample predicted letter
-    logprobs = lh.o;
-    if(temperature !== 1.0 && samplei_bool) {
-      // scale log probabilities by temperature and renormalize
-      // if temperature is high, logprobs will go towards zero
-      // and the softmax outputs will be more diffuse. if temperature is
-      // very low, the softmax outputs will be more peaky
-      for(var q=0,nq=logprobs.w.length;q<nq;q++) {
-        logprobs.w[q] /= temperature;
-      }
-    }
-
-    probs = softmax(logprobs);
-    if(samplei_bool) {
-      var ix = samplei(probs.w);
-    } else {
-      var ix = maxi(probs.w);  
-    }
-    
-    if(ix === 0) break; // END token predicted, break out
-    if(s.length > max_chars_gen) { break; } // something is wrong
-
-    var letter = indexToLetter[ix];
-    s += letter;
-  }
-  return s;
-}
-
 var costfun = (model, sent) => {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
@@ -246,7 +199,7 @@ var costfun = (model, sent) => {
     var ix_source = i === -1 ? 0 : letterToIndex[sent[i]]; // first step: start with START token
     var ix_target = i === n-1 ? 0 : letterToIndex[sent[i+1]]; // last step: end with END token
 
-    lh = forwardIndex(G, model, ix_source, prev);
+    lh = forwardIndex(G, model, ix_source, prev, generator, hidden_sizes);
     prev = lh;
 
     // set gradients into logprobabilities
@@ -267,6 +220,25 @@ var costfun = (model, sent) => {
 var ppl_list = [];
 
 var cost_struct, solver_stats;
+
+// worker for predicting sentences on separate thread
+
+let w = work(require('./workers/predict_sentence_worker.js'));
+let worker_callbacks = {};
+
+w.addEventListener('message', function (ev) {
+  let [random_id, data] = ev.data;
+  worker_callbacks[random_id] && worker_callbacks[random_id](data);
+});
+
+let workerPredictSentence = (args, callback) => {
+  let random_id = randi(0,10000000);
+  args.unshift(random_id);
+  worker_callbacks[random_id] = callback;
+  w.postMessage(args); 
+}
+
+// time ticker for training and other tasks
 
 var ticker = new Ticker(function() {
   // sample sentence from data
@@ -289,20 +261,17 @@ var ticker = new Ticker(function() {
 
 ticker.every(50, function(){
   // draw samples
-  $('#samples').html('');
-  for(var q=0;q<predict_num_lines;q++) {
-    var pred = predictSentence(model, true, sample_softmax_temperature);
-    var pred_div = '<div class="apred">'+pred+'</div>'
-    $('#samples').append(pred_div);
-  }
+  workerPredictSentence([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
+    $('#samples').html(result);
+  });
 });
 
 ticker.every(10, function(){
   // draw argmax prediction
-  $('#argmax').html('');
-  var pred = predictSentence(model, false);
-  var pred_div = '<div class="apred">'+pred+'</div>'
-  $('#argmax').append(pred_div);
+
+  workerPredictSentence([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
+    $('#argmax').html(`<div class="apred">${result}</div>`)
+  });
 
   // keep track of perplexity
   $('#epoch').text('epoch: ' + (this.tick_iter/epoch_size).toFixed(2));
