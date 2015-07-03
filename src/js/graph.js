@@ -29,7 +29,7 @@ class Graph {
       return;
     
     let gate;
-
+    
     while(gate = this.backprop.pop()){
       gate.backward();
     }

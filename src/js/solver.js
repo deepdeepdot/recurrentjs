@@ -9,20 +9,20 @@ class Solver {
   
   step(model, step_size, regc, clipval) {
     // perform parameter update
-    var solver_stats = {};
-    var num_clipped = 0;
-    var num_tot = 0;
+    let solver_stats = {};
+    let num_clipped = 0;
+    let num_tot = 0;
     
-    for(var k in model) {
-      var m = model[k]; // mat ref
+    for(let k in model) {
+      let m = model[k]; // mat ref
       
       this.step_cache[k] = this.step_cache[k] || new Mat(m.n, m.d); 
       
-      var s = this.step_cache[k];
-      for(var i=0,n=m.w.length;i<n;i++) {
+      let s = this.step_cache[k];
+      for(let i=0,n=m.w.length;i<n;i++) {
 
         // rmsprop adaptive learning rate
-        var mdwi = m.dw[i];
+        let mdwi = m.dw[i];
         s.w[i] = s.w[i] * this.decay_rate + (1.0 - this.decay_rate) * mdwi * mdwi;
 
         // gradient clip

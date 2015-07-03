@@ -82,13 +82,8 @@ var initModel = () => {
     "Wil": new RandMat(input_size, letter_size , 0, 0.08)
   };
   
-  let network;
-  
-  if(generator === 'rnn') {
-    network = initRNN(letter_size, hidden_sizes, output_size);
-  } else {
-    network = initLSTM(letter_size, hidden_sizes, output_size);
-  }
+  let fn = (generator==='rnn') ? initRNN : initLSTM;
+  let network = fn(letter_size, hidden_sizes, output_size)
   
   _.merge(model, network);
   return model;
@@ -283,8 +278,10 @@ var ticker = new Ticker(function() {
   
   // use built up graph to compute backprop (set .dw fields in mats)
   cost_struct.G.backward();
+  
   // perform param update
   solver_stats = solver.step(model, learning_rate, regc, clipval);
+  
   //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
 
   ppl_list.push(cost_struct.ppl); // keep track of perplexity
