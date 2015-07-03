@@ -56,21 +56,23 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
   // prev is a struct containing hidden and cell
   // from previous iteration
 
-  if(typeof prev.h === 'undefined') {
-    var hidden_prevs = [];
-    var cell_prevs = [];
-    for(var d=0;d<hidden_sizes.length;d++) {
+  let hidden_prevs, cell_prevs;
+  
+  if(prev.h === undefined) {
+    hidden_prevs = [];
+    cell_prevs = [];
+    for(var d=0,h=hidden_sizes.length;d<h;d++) {
       hidden_prevs.push(new Mat(hidden_sizes[d],1)); 
       cell_prevs.push(new Mat(hidden_sizes[d],1)); 
     }
   } else {
-    var hidden_prevs = prev.h;
-    var cell_prevs = prev.c;
+    hidden_prevs = prev.h;
+    cell_prevs = prev.c;
   }
 
   var hidden = [];
   var cell = [];
-  for(var d=0;d<hidden_sizes.length;d++) {
+  for(var d=0,h=hidden_sizes.length;d<h;d++) {
 
     var input_vector = d === 0 ? x : hidden[d-1];
     var hidden_prev = hidden_prevs[d];
@@ -79,22 +81,22 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
     // input gate
     var h0 = G.mul(model['Wix'+d], input_vector);
     var h1 = G.mul(model['Wih'+d], hidden_prev);
-    var input_gate = G.sigmoid(G.add(G.add(h0,h1),model['bi'+d]));
+    var input_gate = G.sigmoid(G.add(h0, h1, model['bi'+d]));
 
     // forget gate
     var h2 = G.mul(model['Wfx'+d], input_vector);
     var h3 = G.mul(model['Wfh'+d], hidden_prev);
-    var forget_gate = G.sigmoid(G.add(G.add(h2, h3),model['bf'+d]));
+    var forget_gate = G.sigmoid(G.add(h2, h3, model['bf'+d]));
 
     // output gate
     var h4 = G.mul(model['Wox'+d], input_vector);
     var h5 = G.mul(model['Woh'+d], hidden_prev);
-    var output_gate = G.sigmoid(G.add(G.add(h4, h5),model['bo'+d]));
+    var output_gate = G.sigmoid(G.add(h4, h5, model['bo'+d]));
 
     // write operation on cells
     var h6 = G.mul(model['Wcx'+d], input_vector);
     var h7 = G.mul(model['Wch'+d], hidden_prev);
-    var cell_write = G.tanh(G.add(G.add(h6, h7),model['bc'+d]));
+    var cell_write = G.tanh(G.add(h6, h7, model['bc'+d]));
 
     // compute new cell activation
     var retain_cell = G.eltmul(forget_gate, cell_prev); // what do we keep from cell
@@ -113,7 +115,7 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
   var output = G.add(G.mul(model['Whd'], last_hidden), model['bd']);
 
   // return cell memory, hidden representation and output
-  return {'h':hidden, 'c':cell, 'o' : output};
+  return {'h':hidden, 'c':cell, 'o': output};
 }
 
 var initRNN = (input_size, hidden_sizes, output_size) => {
@@ -140,7 +142,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   // x is 1D column vector with observation
   // prev is a struct containing hidden activations from last step
 
-  if(typeof prev.h === 'undefined') {
+  if(prev.h === undefined) {
     var hidden_prevs = [];
     for(var d=0;d<hidden_sizes.length;d++) {
       hidden_prevs.push(new Mat(hidden_sizes[d],1)); 
@@ -158,7 +160,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
 
     var h0 = G.mul(model['Wxh'+d], input_vector);
     var h1 = G.mul(model['Whh'+d], hidden_prev);
-    var hidden_d = G.relu(G.add(G.add(h0, h1), model['bhh'+d]));
+    var hidden_d = G.relu(G.add(h0, h1, model['bhh'+d]));
 
     hidden.push(hidden_d);
   }

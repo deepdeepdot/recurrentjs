@@ -227,15 +227,18 @@ let w = work(require('./workers/predict_sentence_worker.js'));
 let worker_callbacks = {};
 
 w.addEventListener('message', function (ev) {
-  let [random_id, data] = ev.data;
-  worker_callbacks[random_id] && worker_callbacks[random_id](data);
+  let [id, data] = ev.data;
+  if(worker_callbacks[id]){
+    worker_callbacks[id](data);
+    delete worker_callbacks[id];
+  }
 });
 
 let workerPredictSentence = (args, callback) => {
-  let random_id = randi(0,10000000);
-  args.unshift(random_id);
-  worker_callbacks[random_id] = callback;
-  w.postMessage(args); 
+  let id = randi(0,1000000);
+  args.unshift(id);
+  worker_callbacks[id] = callback;
+  w.postMessage(args);
 }
 
 // time ticker for training and other tasks

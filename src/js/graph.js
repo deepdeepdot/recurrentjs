@@ -1,13 +1,14 @@
 import {assert} from "./helper.js";
 import {Mat} from "./mat.js";
 import {sig} from "./math.js";
+import _ from "lodash";
 
-function addGate(target, name, descriptor) {
+function processGate(target, name, descriptor) {
   let fn = descriptor.value;
   descriptor.value = function(...args) {
     let gate = fn.apply(this, args);
     gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
+    this.needs_backprop && this.backprop.unshift(gate);
     return gate.props.out;
   }
 }
@@ -27,54 +28,49 @@ class Graph {
   backward() {
     if(!this.needs_backprop)
       return;
-    
-    let gate;
-    
-    while(gate = this.backprop.pop()){
-      gate.backward();
+    let b = this.backprop;
+
+    for(let i=0,n=b.length;i<n;i++){
+      b[i].backward();
     }
   }
   
-  @addGate
+  @processGate
   rowPluck(m, ix) {
     // pluck a row of m with index ix and return it as col vector
-    assert(ix >= 0 && ix < m.n);
     return new RowPluckGate(m, ix);
   }
 
-  @addGate
+  @processGate
   tanh(m) {
     // tanh nonlinearity
     return new TanhGate(m);
   }
 
-  @addGate
+  @processGate
   sigmoid(m) {
     // sigmoid nonlinearity
     return new SigmoidGate(m);
   }
 
-  @addGate
+  @processGate
   relu(m) {
     return new ReluGate(m);
   }
 
-  @addGate
+  @processGate
   mul(m1, m2) {
     // multiply matrices m1 * m2
-    assert(m1.d === m2.n, 'matmul dimensions misaligned');
     return new MulGate(m1, m2);
   }
 
-  @addGate
-  add(m1, m2) {
-    assert(m1.w.length === m2.w.length);
-    return new AddGate(m1, m2);
+  @processGate
+  add() {
+    return new AddGate(...arguments);
   }
 
-  @addGate
+  @processGate
   eltmul(m1, m2) {
-    assert(m1.w.length === m2.w.length);
     return new EltmulGate(m1, m2);
   }
 }
@@ -103,26 +99,34 @@ class EltmulGate {
   }
 }
 class AddGate {
-  constructor(m1, m2) {
-    this.props = {m1, m2};
+  constructor() {
+    this.props = {
+      mats: arguments,
+      m: arguments[0]
+    };
   }
 
   forward() {
-    let {m1, m2} = this.props;
-    
-    let  out = new Mat(m1.n, m1.d);
-    for(let i=0,n=m1.w.length;i<n;i++) {
-      out.w[i] = m1.w[i] + m2.w[i];
+    let {mats, m} = this.props;
+
+    let out = new Mat(m.n, m.d);
+    for(let i=0,n=m.w.length;i<n;i++) {
+      let sum = 0;
+      for(let j=0,k=mats.length;j<k;j++){
+        sum += mats[j].w[i];
+      }
+      out.w[i] = sum;
     }
     this.props.out = out;
   }
   
   backward() {
-    let {m1, m2, out} = this.props;
+    let {mats, m, out} = this.props;
 
-    for(let i=0,n=m1.w.length;i<n;i++) {
-      m1.dw[i] += out.dw[i];
-      m2.dw[i] += out.dw[i];
+    for(let i=0,n=m.w.length;i<n;i++) {
+      for(let j=0,k=mats.length;j<k;j++){
+        mats[j].dw[i] += out.dw[i];
+      }
     }
   }
 }
@@ -259,7 +263,10 @@ class RowPluckGate {
 
     let d = m.d;
     let out = new Mat(d, 1);
-    for(let i=0,n=d;i<n;i++){ out.w[i] = m.w[d * ix + i]; } // copy over the data
+    
+    for(let i=0,n=d;i<n;i++){ 
+      out.w[i] = m.w[d * ix + i];
+    } // copy over the data
     
     this.props.out = out;
   }
