@@ -31,6 +31,7 @@ var pplGraph;
 
 var generator, hidden_sizes, letter_size, regc, learning_rate, clipval, ch, lh, logprobs, probs, step_cache_out, step_cache;
 
+var predict_num_lines = 10; // number of lines for the prediction to show
 var model = {};
 
 var initVocab = (sents, count_threshold) => {
@@ -67,7 +68,7 @@ var initVocab = (sents, count_threshold) => {
   input_size = vocab.length + 1;
   output_size = vocab.length + 1;
   epoch_size = sents.length;
-  $("#prepro_status").text('found ' + vocab.length + ' distinct characters: ' + vocab.join(''));
+  $("#prepro_status").text('found ' + vocab.length + ' distinct characters: ' + vocab.sort().join(''));
 }
 
 var utilAddToModel = (modelto, modelfrom) => {
@@ -292,7 +293,7 @@ var ticker = new Ticker(function() {
 ticker.every(50, function(){
   // draw samples
   $('#samples').html('');
-  for(var q=0;q<5;q++) {
+  for(var q=0;q<predict_num_lines;q++) {
     var pred = predictSentence(model, true, sample_softmax_temperature);
     var pred_div = '<div class="apred">'+pred+'</div>'
     $('#samples').append(pred_div);
