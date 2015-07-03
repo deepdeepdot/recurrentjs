@@ -2,6 +2,16 @@ import {assert} from "./helper.js";
 import {Mat} from "./mat.js";
 import {sig} from "./math.js";
 
+function addGate(target, name, descriptor) {
+  let fn = descriptor.value;
+  descriptor.value = function(...args) {
+    let gate = fn.apply(this, args);
+    gate.forward();
+    this.needs_backprop && this.backprop.push(gate);
+    return gate.props.out;
+  }
+}
+
 // Transformer definitions
 class Graph {
   constructor(needs_backprop=true) {
@@ -25,65 +35,47 @@ class Graph {
     }
   }
   
+  @addGate
   rowPluck(m, ix) {
     // pluck a row of m with index ix and return it as col vector
     assert(ix >= 0 && ix < m.n);
-    
-    let gate = new RowPluckGate(m, ix);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new RowPluckGate(m, ix);
   }
 
+  @addGate
   tanh(m) {
     // tanh nonlinearity
-    let gate = new TanhGate(m);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new TanhGate(m);
   }
 
+  @addGate
   sigmoid(m) {
     // sigmoid nonlinearity
-    let gate = new SigmoidGate(m);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new SigmoidGate(m);
   }
 
+  @addGate
   relu(m) {
-    let gate = new ReluGate(m);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new ReluGate(m);
   }
 
+  @addGate
   mul(m1, m2) {
     // multiply matrices m1 * m2
     assert(m1.d === m2.n, 'matmul dimensions misaligned');
-
-    let gate = new MulGate(m1, m2);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new MulGate(m1, m2);
   }
 
+  @addGate
   add(m1, m2) {
     assert(m1.w.length === m2.w.length);
-
-    let gate = new AddGate(m1, m2);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new AddGate(m1, m2);
   }
 
+  @addGate
   eltmul(m1, m2) {
     assert(m1.w.length === m2.w.length);
-
-    let gate = new EltmulGate(m1, m2);
-    gate.forward();
-    this.needs_backprop && this.backprop.push(gate);
-    return gate.props.out;
+    return new EltmulGate(m1, m2);
   }
 }
 

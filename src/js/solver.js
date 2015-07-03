@@ -12,6 +12,7 @@ class Solver {
     var solver_stats = {};
     var num_clipped = 0;
     var num_tot = 0;
+    
     for(var k in model) {
       var m = model[k]; // mat ref
       
