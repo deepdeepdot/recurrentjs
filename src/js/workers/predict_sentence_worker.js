@@ -29,14 +29,16 @@ var predictSentence = (model, samplei_bool=false, temperature=1.0, letterToIndex
     }
 
     let probs = softmax(logprobs);
+    let ix;
+
     if(samplei_bool) {
-      var ix = samplei(probs.w);
+      ix = samplei(probs.w);
     } else {
-      var ix = maxi(probs.w);  
+      ix = maxi(probs.w);  
     }
     
     if(ix === 0) break; // END token predicted, break out
-    if(s.length > max_chars_gen) { break; } // something is wrong
+    if(s.length > max_chars_gen) break; // something is wrong
 
     var letter = indexToLetter[ix];
     s += letter;
@@ -48,9 +50,12 @@ module.exports = function (self) {
   self.addEventListener('message',function (ev){
   	let [random_id, num_lines, args] = ev.data;
   	let lines = [];
-  	for(let i = 0; i<num_lines; i++){
+  	
+    for(let i = 0; i<num_lines; i++){
   		lines.push(predictSentence(...args));
   	}
-  	self.postMessage([random_id, lines.join("\n")]);
+
+    let sentences = lines.join("\n");
+  	self.postMessage([random_id, sentences]);
   });
 };

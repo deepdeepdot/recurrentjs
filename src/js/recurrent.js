@@ -24,24 +24,24 @@ var initLSTM = (input_size, hidden_sizes, output_size) => {
 
     // gates parameters
     _.assign(model, {
-      ['Wix'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wih'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['Wix'+d]:  new RandMat(hidden_size, prev_size),
+      ['Wih'+d]:  new RandMat(hidden_size, hidden_size),
       ['bi'+d]:   new Mat(hidden_size, 1),
-      ['Wfx'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wfh'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['Wfx'+d]:  new RandMat(hidden_size, prev_size),
+      ['Wfh'+d]:  new RandMat(hidden_size, hidden_size),
       ['bf'+d]:   new Mat(hidden_size, 1),
-      ['Wox'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Woh'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['Wox'+d]:  new RandMat(hidden_size, prev_size),
+      ['Woh'+d]:  new RandMat(hidden_size, hidden_size),
       ['bo'+d]:   new Mat(hidden_size, 1),
-      ['Wcx'+d]:  new RandMat(hidden_size, prev_size , 0, 0.08),
-      ['Wch'+d]:  new RandMat(hidden_size, hidden_size , 0, 0.08),
+      ['Wcx'+d]:  new RandMat(hidden_size, prev_size),
+      ['Wch'+d]:  new RandMat(hidden_size, hidden_size),
       ['bc'+d]:   new Mat(hidden_size, 1)
     });
   }
 
   // decoder params
   _.assign(model, {
-    'Whd':  new RandMat(output_size, hidden_size, 0, 0.08),
+    'Whd':  new RandMat(output_size, hidden_size),
     'bd':   new Mat(output_size, 1)
   });
   
@@ -125,12 +125,12 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   for(var d=0;d<hidden_sizes.length;d++) { // loop over depths
     var prev_size = d === 0 ? input_size : hidden_sizes[d - 1];
     var hidden_size = hidden_sizes[d];
-    model['Wxh'+d] = new RandMat(hidden_size, prev_size , 0, 0.08);
-    model['Whh'+d] = new RandMat(hidden_size, hidden_size, 0, 0.08);
+    model['Wxh'+d] = new RandMat(hidden_size, prev_size);
+    model['Whh'+d] = new RandMat(hidden_size, hidden_size);
     model['bhh'+d] = new Mat(hidden_size, 1);
   }
   // decoder params
-  model['Whd'] = new RandMat(output_size, hidden_size, 0, 0.08);
+  model['Whd'] = new RandMat(output_size, hidden_size);
   model['bd'] = new Mat(output_size, 1);
   return model;
 }
