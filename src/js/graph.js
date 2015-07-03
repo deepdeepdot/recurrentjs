@@ -144,14 +144,15 @@ class MulGate {
     let {m1, m2} = this.props;
     let n = m1.n;
     let d = m2.d;
+    let d1 = m1.d;
 
     let out = new Mat(n,d);
 
-    for(let i=0;i<m1.n;i++) { // loop over rows of m1
-      for(let j=0;j<m2.d;j++) { // loop over cols of m2
+    for(let i=0;i<n;i++) { // loop over rows of m1
+      for(let j=0;j<d;j++) { // loop over cols of m2
         let dot = 0.0;
-        for(let k=0;k<m1.d;k++) { // dot product loop
-          dot += m1.w[m1.d*i+k] * m2.w[m2.d*k+j];
+        for(let k=0;k<d1;k++) { // dot product loop
+          dot += m1.w[d1*i+k] * m2.w[d*k+j];
         }
         out.w[d*i+j] = dot;
       }
@@ -162,15 +163,16 @@ class MulGate {
 
   backward() {
     let {m1, m2, out} = this.props;
-    var n = m1.n;
-    var d = m2.d;
+    let n = m1.n;
+    let d = m2.d;
+    let d1 = m1.d;
 
-    for(let i=0;i<m1.n;i++) { // loop over rows of m1
-      for(let j=0;j<m2.d;j++) { // loop over cols of m2
-        for(let k=0;k<m1.d;k++) { // dot product loop
+    for(let i=0;i<n;i++) { // loop over rows of m1
+      for(let j=0;j<d;j++) { // loop over cols of m2
+        for(let k=0;k<d1;k++) { // dot product loop
           let b = out.dw[d*i+j];
-          m1.dw[m1.d*i+k] += m2.w[m2.d*k+j] * b;
-          m2.dw[m2.d*k+j] += m1.w[m1.d*i+k] * b;
+          m1.dw[d1*i+k] += m2.w[d*k+j] * b;
+          m2.dw[d*k+j] += m1.w[d1*i+k] * b;
         }
       }
     }

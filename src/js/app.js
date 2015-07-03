@@ -192,14 +192,8 @@ var forwardIndex = (G, model, ix, prev) => {
   var x = G.rowPluck(model['Wil'], ix);
   // forward prop the sequence learner
 
-  let out_struct;
-
-  if(generator === 'rnn') {
-    out_struct = forwardRNN(G, model, hidden_sizes, x, prev);
-  } else {
-    out_struct = forwardLSTM(G, model, hidden_sizes, x, prev);
-  }
-  return out_struct;
+  let fnc = (generator==='rnn') ? forwardRNN : forwardLSTM;
+  return fnc(G, model, hidden_sizes, x, prev);
 }
 
 var predictSentence = (model, samplei_bool=false, temperature=1.0) => {
@@ -298,7 +292,7 @@ var ticker = new Ticker(function() {
   // evaluate now and then
 });
 
-ticker.every(100, function(){
+ticker.every(50, function(){
   // draw samples
   $('#samples').html('');
   for(var q=0;q<5;q++) {
@@ -308,7 +302,7 @@ ticker.every(100, function(){
   }
 });
 
-ticker.every(20, function(){
+ticker.every(10, function(){
   // draw argmax prediction
   $('#argmax').html('');
   var pred = predictSentence(model, false);
@@ -321,7 +315,7 @@ ticker.every(20, function(){
   $('#ticktime').text('forw/bwd time per example: ' + this.tick_time.toFixed(1) + 'ms');
 });
   
-ticker.every(200, function(){
+ticker.every(100, function(){
   var median_ppl = median(ppl_list);
   ppl_list = [];
   pplGraph.add(this.tick_iter, median_ppl);
