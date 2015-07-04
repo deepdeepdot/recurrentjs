@@ -66,11 +66,13 @@ module.exports = function (self) {
       case 'sample':
         if(!cost_struct){ return; }
         self.postMessage([id, {
-          model: model,
           tick_iter: ticker.tick_iter,
           tick_time: ticker.tick_time,
           ppl: cost_struct.ppl
         }]);
+        break;
+      case 'sample_model':
+        self.postMessage([id, {model}]);
         break;
       case 'sample_ppl':
         self.postMessage([id, {

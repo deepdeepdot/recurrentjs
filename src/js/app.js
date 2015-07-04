@@ -97,17 +97,21 @@ let App = React.createClass({
     this.stopSamplers();
 
     this.sample_loop = setInterval(()=>{
-      sampler.send([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
-        .then((result) => {
-          argmax = result;
-          this.forceUpdate();
-        });
-      
-      sampler.send([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
-        .then((result) => {
-          samples = result;
-          this.forceUpdate();
-        });
+      trainer.send(["sample_model"]).then((result)=>{
+        model = result.model;
+
+        sampler.send([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
+          .then((result) => {
+            argmax = result;
+            this.forceUpdate();
+          });
+        
+        sampler.send([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
+          .then((result) => {
+            samples = result;
+            this.forceUpdate();
+          });
+      });
     }, 1000);
 
     this.draw_loop = setInterval(()=>{
@@ -125,7 +129,6 @@ let App = React.createClass({
         epoch = (result.tick_iter/epoch_size).toFixed(2);
         perplexity = result.ppl.toFixed(2);
         ticktime = result.tick_time.toFixed(1);
-        model = result.model;
         this.forceUpdate();
       });
     }, 500);
