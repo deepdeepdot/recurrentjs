@@ -9,6 +9,7 @@ import {median, randi, maxi, samplei, gaussRandom} from "./math";
 import Graph from "./graph.js";
 import Solver from "./solver.js";
 import Ticker from "./ticker";
+import WebWorker from "./webworker";
 
 import React from "react";
 import {classSet as cx} from "react-addons";
@@ -184,6 +185,8 @@ var loadModel = (j) => {
   tick_iter = 0;
 }
 
+let predict_worker = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
+
 var G = new Graph();
 
 var costfun = (model, sent) => {
@@ -226,22 +229,6 @@ var cost_struct, solver_stats;
 
 // worker for predicting sentences on separate thread
 
-let worker = work(require('./workers/predict_sentence_worker.js'));
-let worker_callbacks = {};
-
-worker.addEventListener('message', function (ev) {
-  let [id, data] = ev.data;
-  if(worker_callbacks[id]){
-    worker_callbacks[id](data);
-  }
-});
-
-let workerPredictSentence = (args, callback) => {
-  let id = randi(0, 1000000);
-  args.unshift(id);
-  worker_callbacks[id] = callback;
-  worker.postMessage(args);
-}
 
 // time ticker for training and other tasks
 
@@ -266,7 +253,7 @@ var ticker = new Ticker(function() {
 
 ticker.every(50, function(){
   // draw samples
-  workerPredictSentence([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
+  predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
     $('#samples').html(result);
   });
 });
@@ -274,7 +261,7 @@ ticker.every(50, function(){
 ticker.every(10, function(){
   // draw argmax prediction
 
-  workerPredictSentence([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
+  predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
     $('#argmax').html(`<div class="apred">${result}</div>`)
   });
 
