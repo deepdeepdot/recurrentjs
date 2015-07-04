@@ -1,9 +1,10 @@
-import {assert} from "./helper.js";
-import {zeros} from "./math.js";
-import {RandMat, Mat} from "./mat.js";
-import Graph from "./graph.js";
-import Solver from "./solver.js";
+import {assert} from "./helper";
+import {zeros} from "./math";
+import {RandMat, Mat} from "./mat";
+import Graph from "./graph";
+import Solver from "./solver";
 import _ from "lodash";
+import softmax from "./softmax"
 
 var forwardIndex = (G, model, ix, prev, generator, hidden_sizes) => {
   var x = G.rowPluck(model['Wil'], ix);
@@ -172,10 +173,46 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   return {'h':hidden, 'o' : output};
 }
 
+let costfun = (model, sent, letterToIndex, generator, hidden_sizes) => {
+  // takes a model and a sentence and
+  // calculates the loss. Also returns the Graph
+  // object which can be used to do backprop
+  let G = new Graph();
+
+  let n = sent.length;
+  let log2ppl = 0.0;
+  let cost = 0.0;
+  let prev = {};
+  let logprobs, probs;
+
+  for(let i=-1;i<n;i++) {
+    // start and end tokens are zeros
+    let ix_source = i === -1 ? 0 : letterToIndex[sent[i]]; // first step: start with START token
+    let ix_target = i === n-1 ? 0 : letterToIndex[sent[i+1]]; // last step: end with END token
+
+    let lh = forwardIndex(G, model, ix_source, prev, generator, hidden_sizes);
+    prev = lh;
+
+    // set gradients into logprobabilities
+    logprobs = lh.o; // interpret output as logprobs
+    probs = softmax(logprobs); // compute the softmax probabilities
+
+    log2ppl += -Math.log2(probs.w[ix_target]); // accumulate base 2 log prob and do smoothing
+    cost += -Math.log(probs.w[ix_target]);
+
+    // write gradients into log probabilities
+    logprobs.dw = probs.w;
+    logprobs.dw[ix_target] -= 1
+  }
+  let ppl = Math.pow(2, log2ppl / (n - 1));
+  return {G, ppl, cost};
+}
+
 export default {
   forwardIndex,
   forwardLSTM,
   initLSTM,
   forwardRNN,
-  initRNN
+  initRNN,
+  costfun
 };

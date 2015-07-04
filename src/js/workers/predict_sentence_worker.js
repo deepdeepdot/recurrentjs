@@ -6,7 +6,7 @@ import Graph from "../graph";
 
 var max_chars_gen = 100; // max length of generated sentences
 
-var predictSentence = (model, samplei_bool=false, temperature=1.0, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes) => {
+var predictSentence = (model, samplei_bool=false, temperature=1.0, letterToIndex, indexToLetter, generator, hidden_sizes) => {
   let G = new Graph(false);
   let s = '';
   let prev = {};
@@ -20,7 +20,7 @@ var predictSentence = (model, samplei_bool=false, temperature=1.0, letterToIndex
     prev = lh;
 
     // sample predicted letter
-    logprobs = lh.o;
+    let logprobs = lh.o;
     if(temperature !== 1.0 && samplei_bool) {
       // scale log probabilities by temperature and renormalize
       // if temperature is high, logprobs will go towards zero

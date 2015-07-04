@@ -2,7 +2,7 @@ import _ from "lodash";
 import $ from "jquery";
 import work from "webworkify";
 
-import {forwardIndex, forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
+import {costfun, forwardIndex, forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
 import Rvis from "./vis";
 import {RandMat, Mat} from "./mat";
 import softmax from "./softmax"
@@ -18,23 +18,22 @@ import ChooseInputTextComponent from "./components/choose_input_text_component";
 import Slider from "./components/slider";
 
 // prediction params
-var sample_softmax_temperature = 1.0; // how peaky model predictions should be
+let sample_softmax_temperature = 1.0; // how peaky model predictions should be
 
-// various global var inits
-var epoch_size = -1;
-var input_size = -1;
-var output_size = -1;
-var letterToIndex = {};
-var indexToLetter = {};
-var vocab = [];
-var data_sents = [];
-var solver = new Solver(); // should be class because it needs memory for step caches
-var pplGraph;
+// letious global let inits
+let epoch_size, input_size, output_size;
+let letterToIndex = {};
+let indexToLetter = {};
+let vocab = [];
+let data_sents = [];
 
-var ch, lh, logprobs, probs, step_cache_out, step_cache, input_text;
+let solver = new Solver(); // should be class because it needs memory for step caches
+let pplGraph;
 
-var predict_num_lines = 10; // number of lines for the prediction to show
-var model = {};
+let step_cache_out, step_cache, input_text;
+
+let predict_num_lines = 10; // number of lines for the prediction to show
+let model = {};
 
 let generator = 'lstm';       // can be 'rnn' or 'lstm'
 let hidden_sizes = [20,20];   // list of sizes of hidden layers
@@ -45,14 +44,22 @@ let regc = 0.000001;          // L2 regularization strength
 let learning_rate = 0.01;     // learning rate
 let clipval = 5.0;            // clip gradients at this value
 
-var initVocab = (sents, count_threshold) => {
+
+let predict_worker = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
+
+let ppl_list = [];
+let cost_struct, solver_stats;
+
+let epoch, perplexity, ticktime, samples, argmax;
+
+let initVocab = (sents, count_threshold) => {
   // go over all characters and keep track of all unique ones seen
-  var txt = sents.join(''); // concat all
+  let txt = sents.join(''); // concat all
 
   // count up all characters
-  var d = {};
-  for(var i=0,n=txt.length;i<n;i++) {
-    var txti = txt[i];
+  let d = {};
+  for(let i=0,n=txt.length;i<n;i++) {
+    let txti = txt[i];
     if(txti in d) { d[txti] += 1; } 
     else { d[txti] = 1; }
   }
@@ -64,8 +71,8 @@ var initVocab = (sents, count_threshold) => {
   // NOTE: start at one because we will have START and END tokens!
   // that is, START token will be index 0 in model letter vectors
   // and END token will be index 0 in the next character softmax
-  var q = 1; 
-  for(ch in d) {
+  let q = 1; 
+  for(let ch in d) {
     if(d[ch] >= count_threshold) {
       // add character to vocab
       letterToIndex[ch] = q;
@@ -83,7 +90,7 @@ var initVocab = (sents, count_threshold) => {
   return vocab;
 }
 
-var initModel = () => {
+let initModel = () => {
   // letter embedding vectors
   let model = {
     "Wil": new RandMat(input_size, letter_size)
@@ -96,49 +103,6 @@ var initModel = () => {
   return model;
 }
 
-var G = new Graph();
-var costfun = (model, sent) => {
-  // takes a model and a sentence and
-  // calculates the loss. Also returns the Graph
-  // object which can be used to do backprop
-  G.reset();
-
-  var n = sent.length;
-  var log2ppl = 0.0;
-  var cost = 0.0;
-  var prev = {};
-
-  for(var i=-1;i<n;i++) {
-    // start and end tokens are zeros
-    var ix_source = i === -1 ? 0 : letterToIndex[sent[i]]; // first step: start with START token
-    var ix_target = i === n-1 ? 0 : letterToIndex[sent[i+1]]; // last step: end with END token
-
-    lh = forwardIndex(G, model, ix_source, prev, generator, hidden_sizes);
-    prev = lh;
-
-    // set gradients into logprobabilities
-    logprobs = lh.o; // interpret output as logprobs
-    probs = softmax(logprobs); // compute the softmax probabilities
-
-    log2ppl += -Math.log2(probs.w[ix_target]); // accumulate base 2 log prob and do smoothing
-    cost += -Math.log(probs.w[ix_target]);
-
-    // write gradients into log probabilities
-    logprobs.dw = probs.w;
-    logprobs.dw[ix_target] -= 1
-  }
-  var ppl = Math.pow(2, log2ppl / (n - 1));
-  return {G, ppl, cost};
-}
-
-let predict_worker = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
-
-var ppl_list = [];
-var cost_struct, solver_stats;
-var sample_softmax_temperature = 1;
-
-let epoch, perplexity, ticktime, samples, argmax;
-
 let App = React.createClass({
 
   componentDidMount() {
@@ -149,7 +113,7 @@ let App = React.createClass({
       let sent = _.sample(data_sents)
 
       // evaluate cost function on a sentence
-      cost_struct = costfun(model, sent);
+      cost_struct = costfun(model, sent, letterToIndex, generator, hidden_sizes);
       
       // use built up graph to compute backprop (set .dw fields in mats)
       cost_struct.G.backward();
@@ -165,7 +129,7 @@ let App = React.createClass({
 
     this.ticker.every(50, function(){
       // draw samples
-      predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]])
+      predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
         .then((result) => {
           samples = result;
           self.forceUpdate();
@@ -175,7 +139,7 @@ let App = React.createClass({
     this.ticker.every(10, function(){
       // draw argmax prediction
 
-      predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]])
+      predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
         .then((result) => {
           argmax = result;
           self.forceUpdate();
@@ -189,7 +153,7 @@ let App = React.createClass({
     });
       
     this.ticker.every(100, function(){
-      var median_ppl = median(ppl_list);
+      let median_ppl = median(ppl_list);
       ppl_list = [];
       pplGraph.add(this.tick_iter, median_ppl);
       pplGraph.drawSelf();
@@ -215,20 +179,20 @@ let App = React.createClass({
   },
 
   saveModel() {
-    var out = {};
+    let out = {};
     out['hidden_sizes'] = hidden_sizes;
     out['generator'] = generator;
     out['letter_size'] = letter_size;
-    var model_out = {};
-    for(var k in model) {
+    let model_out = {};
+    for(let k in model) {
       model_out[k] = model[k].toJSON();
     }
     out['model'] = model_out;
-    var solver_out = {};
+    let solver_out = {};
     solver_out['decay_rate'] = solver.decay_rate;
     solver_out['smooth_eps'] = solver.smooth_eps;
     step_cache_out = {};
-    for(var k in solver.step_cache) {
+    for(let k in solver.step_cache) {
       step_cache_out[k] = solver.step_cache[k].toJSON();
     }
     solver_out['step_cache'] = step_cache_out;
@@ -240,13 +204,13 @@ let App = React.createClass({
   },
 
   loadModel() {
-    var j = JSON.parse($("#tio").val());
+    let j = JSON.parse($("#tio").val());
     hidden_sizes = j.hidden_sizes;
     generator = j.generator;
     letter_size = j.letter_size;
     model = {};
-    for(var k in j.model) {
-      var matjson = j.model[k];
+    for(let k in j.model) {
+      let matjson = j.model[k];
       model[k] = new Mat(1,1);
       model[k].fromJSON(matjson);
     }
@@ -254,8 +218,8 @@ let App = React.createClass({
     solver.decay_rate = j.solver.decay_rate;
     solver.smooth_eps = j.solver.smooth_eps;
     solver.step_cache = {};
-    for(var k in j.solver.step_cache){
-      var matjson = j.solver.step_cache[k];
+    for(let k in j.solver.step_cache){
+      let matjson = j.solver.step_cache[k];
       solver.step_cache[k] = new Mat(1,1);
       solver.step_cache[k].fromJSON(matjson);
     }
@@ -278,7 +242,7 @@ let App = React.createClass({
   },
 
   reinit() {
-    // note: reinit writes global vars
+    // note: reinit writes global lets
     // eval options to set some globals
 
     epoch = null;
@@ -393,15 +357,18 @@ let App = React.createClass({
         </p>
         
         <div id="status">
-          <div className="clearfix">
+          <div>
             <div className="hh">Training stats:</div>
             <div className="aslider" id="learning_slider">{learning_slider}</div>
 
-            <div id="ticktime">{ticktime && ticktime_text}</div>
-            <div id="epoch">{epoch && epoch_text}</div>
-            <div id="ppl">{perplexity && perplexity_text}</div>
-
-            <div id="pplgraph"></div>
+            <div className="clearfix">
+              <div className="lt">
+                <div id="ticktime">{ticktime && ticktime_text}</div>
+                <div id="epoch">{epoch && epoch_text}</div>
+                <div id="ppl">{perplexity && perplexity_text}</div>
+              </div>
+              <div id="pplgraph"></div>
+            </div>
           </div>
 
           <div className="hh">Model samples:</div>
@@ -441,27 +408,27 @@ React.render(
   document.getElementById('application')
 );
 
-// var gradCheck = () => {
-//   var model = initModel();
-//   var sent = '^test sentence$';
-//   var cost_struct = costfun(model, sent);
+// let gradCheck = () => {
+//   let model = initModel();
+//   let sent = '^test sentence$';
+//   let cost_struct = costfun(model, sent);
 //   cost_struct.G.backward();
-//   var eps = 0.000001;
+//   let eps = 0.000001;
 
-//   for(var k in model) {
-//     var m = model[k]; // mat ref
-//     for(var i=0,n=m.w.length;i<n;i++) {
+//   for(let k in model) {
+//     let m = model[k]; // mat ref
+//     for(let i=0,n=m.w.length;i<n;i++) {
       
 //       oldval = m.w[i];
 //       m.w[i] = oldval + eps;
-//       var c0 = costfun(model, sent);
+//       let c0 = costfun(model, sent);
 //       m.w[i] = oldval - eps;
-//       var c1 = costfun(model, sent);
+//       let c1 = costfun(model, sent);
 //       m.w[i] = oldval;
 
-//       var gnum = (c0.cost - c1.cost)/(2 * eps);
-//       var ganal = m.dw[i];
-//       var relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
+//       let gnum = (c0.cost - c1.cost)/(2 * eps);
+//       let ganal = m.dw[i];
+//       let relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
 //       if(relerr > 1e-1) {
 //         console.log(k + ': numeric: ' + gnum + ', analytic: ' + ganal + ', err: ' + relerr);
 //       }
