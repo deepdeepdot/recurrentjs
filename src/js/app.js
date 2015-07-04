@@ -253,17 +253,19 @@ var ticker = new Ticker(function() {
 
 ticker.every(50, function(){
   // draw samples
-  predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
-    $('#samples').html(result);
-  });
+  predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]])
+    .then((result) => {
+      $('#samples').html(result);
+    });
 });
 
 ticker.every(10, function(){
   // draw argmax prediction
 
-  predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]], (result) => {
-    $('#argmax').html(`<div class="apred">${result}</div>`)
-  });
+  predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, logprobs, generator, hidden_sizes]])
+    .then((result) => {
+      $('#argmax').html(`<div class="apred">${result}</div>`)
+    });
 
   // keep track of perplexity
   $('#epoch').text('epoch: ' + (this.tick_iter/epoch_size).toFixed(2));

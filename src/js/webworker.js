@@ -1,16 +1,16 @@
 class WebWorker {
   constructor(worker){
     this.worker = worker;
-    this.callbacks = {};
+    this.promises = {};
 
-    let c = this.callbacks;
+    let p = this.promises;
 
     this.worker.addEventListener('message', function(ev) {
       let [id, data] = ev.data;
 
-      if(c[id]){
-        c[id](data);
-        delete c[id];
+      if(p[id]){
+        p[id].resolve(data);
+        delete p[id];
       }
     });
   }
@@ -18,8 +18,11 @@ class WebWorker {
   send_work(args, cb){
     let id = Math.floor(Math.random()*1000000);
     args.unshift(id);
-    this.callbacks[id] = cb;
+
+    let p = Promise.defer();
+    this.promises[id] = p;
     this.worker.postMessage(args);
+    return p.promise;
   }
 }
 
