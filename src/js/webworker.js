@@ -15,7 +15,7 @@ class WebWorker {
     });
   }
 
-  send_work(args, cb){
+  send(args, cb){
     let id = Math.floor(Math.random()*1000000);
     args.unshift(id);
 

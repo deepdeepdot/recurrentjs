@@ -27,7 +27,6 @@ let indexToLetter = {};
 let vocab = [];
 let data_sents = [];
 
-let solver = new Solver(); // should be class because it needs memory for step caches
 let pplGraph;
 
 let step_cache_out, step_cache, input_text;
@@ -45,10 +44,8 @@ let learning_rate = 0.01;     // learning rate
 let clipval = 5.0;            // clip gradients at this value
 
 
-let predict_worker = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
-
-let ppl_list = [];
-let cost_struct, solver_stats;
+let sampler  = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
+let trainer  = new WebWorker(work(require('./workers/train_model_worker.js')));
 
 let epoch, perplexity, ticktime, samples, argmax;
 
@@ -90,92 +87,97 @@ let initVocab = (sents, count_threshold) => {
   return vocab;
 }
 
-let initModel = () => {
-  // letter embedding vectors
-  let model = {
-    "Wil": new RandMat(input_size, letter_size)
-  };
-  
-  let fn = (generator==='rnn') ? initRNN : initLSTM;
-  let network = fn(letter_size, hidden_sizes, output_size)
-  
-  _.merge(model, network);
-  return model;
-}
-
 let App = React.createClass({
 
   componentDidMount() {
-    let self = this;
-
-    this.ticker = new Ticker(function() {
-      // sample sentence from data
-      let sent = _.sample(data_sents)
-
-      // evaluate cost function on a sentence
-      cost_struct = costfun(model, sent, letterToIndex, generator, hidden_sizes);
-      
-      // use built up graph to compute backprop (set .dw fields in mats)
-      cost_struct.G.backward();
-      
-      // perform param update
-      solver_stats = solver.step(model, learning_rate, regc, clipval);
-      
-      //$("#gradclip").text('grad clipped ratio: ' + solver_stats.ratio_clipped)
-      ppl_list.push(cost_struct.ppl); // keep track of perplexity
-
-      // evaluate now and then
-    });
-
-    this.ticker.every(50, function(){
-      // draw samples
-      predict_worker.send_work([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
-        .then((result) => {
-          samples = result;
-          self.forceUpdate();
-        });
-    });
-
-    this.ticker.every(10, function(){
-      // draw argmax prediction
-
-      predict_worker.send_work([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
-        .then((result) => {
-          argmax = result;
-          self.forceUpdate();
-        });
-
-      // keep track of perplexity
-      epoch = (this.tick_iter/epoch_size).toFixed(2);
-      perplexity = cost_struct.ppl.toFixed(2);
-      ticktime = this.tick_time.toFixed(1);
-      self.forceUpdate();
-    });
-      
-    this.ticker.every(100, function(){
-      let median_ppl = median(ppl_list);
-      ppl_list = [];
-      pplGraph.add(this.tick_iter, median_ppl);
-      pplGraph.drawSelf();
-    });
-
     this.startLearning();
   },
 
+  registerSamplers() {
+    this.stopSamplers();
+
+    this.sample_loop = setInterval(()=>{
+      sampler.send([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
+        .then((result) => {
+          argmax = result;
+          this.forceUpdate();
+        });
+      
+      sampler.send([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
+        .then((result) => {
+          samples = result;
+          this.forceUpdate();
+        });
+    }, 1000);
+
+    this.draw_loop = setInterval(()=>{
+      trainer.send(["sample_ppl"]).then(({tick_iter, ppl_list})=>{
+        if(ppl_list.length < 10){ return; }
+        let median_ppl = median(ppl_list);
+        ppl_list = [];
+        pplGraph.add(tick_iter, median_ppl);
+        pplGraph.drawSelf();
+      });
+    }, 2500);
+    
+    this.sample_data_loop = setInterval(()=>{
+      trainer.send(["sample"]).then((result)=>{
+        epoch = (result.tick_iter/epoch_size).toFixed(2);
+        perplexity = result.ppl.toFixed(2);
+        ticktime = result.tick_time.toFixed(1);
+        model = result.model;
+        this.forceUpdate();
+      });
+    }, 500);
+  },
+
+  stopSamplers() {
+    this.sample_data_loop && clearInterval(this.sample_data_loop);
+    this.sample_loop && clearInterval(this.sample_loop);
+    this.draw_loop && clearInterval(this.draw_loop);
+  },
+
   startLearning() {
+    this.stopSamplers();
     pplGraph && pplGraph.reset();
     
     this.reinit().then(()=>{
-      this.ticker.start();
+      this.resumeLearning();
     });
   },
 
   stopLearning() {
-    this.ticker.stop();
+    this.stopSamplers();
+    trainer.send(["stop"]);
   },
 
   resumeLearning() {
-    this.ticker.start();
+    trainer.send(["start"]);
+    this.registerSamplers();
+  },
+
+  initModel() {
+    let model = {
+      Wil: new RandMat(input_size, letter_size)
+    };
+    
+    let fn = (generator==='rnn') ? initRNN : initLSTM;
+    let network = fn(letter_size, hidden_sizes, output_size)
+    
+    _.merge(model, network);
+
+    trainer.send(["init", {
+      model,
+      generator,
+      hidden_sizes,
+      data_sents,
+      learning_rate,
+      regc,
+      clipval,
+      letterToIndex
+    }]);
+
+    return model;
   },
 
   saveModel() {
@@ -214,7 +216,7 @@ let App = React.createClass({
       model[k] = new Mat(1,1);
       model[k].fromJSON(matjson);
     }
-    solver = new Solver(); // have to reinit the solver since model changed
+    let solver = new Solver(); // have to reinit the solver since model changed
     solver.decay_rate = j.solver.decay_rate;
     solver.smooth_eps = j.solver.smooth_eps;
     solver.step_cache = {};
@@ -227,9 +229,7 @@ let App = React.createClass({
     indexToLetter = j['indexToLetter'];
     vocab = j['vocab'];
 
-    // reinit these
-    ppl_list = [];
-    this.ticker.restart();
+    trainer.send(["reset"]);
   },
 
   loadPretrained() {
@@ -249,14 +249,10 @@ let App = React.createClass({
     ticktime = null;
     perplexity = null;
 
-    solver = new Solver(); // reinit solver
     pplGraph = pplGraph || new Rvis.Graph("#pplgraph");
     pplGraph.reset();
 
-    ppl_list = [];
-    this.ticker.reset();
-
-    this.forceUpdate();
+    trainer.send(["reset"]);
 
     // process the input, filter out blanks
 
@@ -276,7 +272,8 @@ let App = React.createClass({
 
       initVocab(data_sents, 1); // takes count threshold for characters
       this.forceUpdate();
-      model = initModel();
+
+      model = this.initModel();
     });
   },
 
@@ -284,7 +281,7 @@ let App = React.createClass({
     window.chosen_input_file = input_file;
     
     this.reinit().then(()=>{
-      this.ticker.start();
+      this.resumeLearning();
     });
   },
 
@@ -308,6 +305,7 @@ let App = React.createClass({
 
     let learning_callback = (value) => {
       learning_rate = Math.pow(10, value);
+      trainer.send(["update_learning_rate", {learning_rate}]);
       this.forceUpdate();
     };
 

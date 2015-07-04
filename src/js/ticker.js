@@ -1,11 +1,14 @@
 import {benchmark} from "./helper";
 
 class Ticker {
-	constructor(fnc) {
-		this.fnc = fnc;
+	constructor() {
 		this.timer = null;
 		this.tick_iter = 0;
 		this.schedule = {};
+	}
+
+	every_tick(fnc) {
+		this.fnc = fnc;
 	}
 
 	every(ms, fnc){
