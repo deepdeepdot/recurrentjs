@@ -6,7 +6,6 @@ var randf = (a, b)=> Math.random()*(b-a)+a;
 var randi = (a, b) => Math.floor(Math.random()*(b-a)+a);
 var randn = (mu, std) => mu+gaussRandom()*std;
 
-
 let gaussRandom = (() => {
   // polar form of the Box-Muller transformation
   // faster and more robust numerically

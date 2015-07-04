@@ -4,6 +4,16 @@ body {
   padding: 20px;
 }
 
+.clearfix {
+  overflow: auto;
+  zoom: 1;
+}
+
+#tio, #newnet {
+  width: 100%;
+  height: 200px;
+}
+
 #forkme{
   position: absolute;
   top: 0;
@@ -99,6 +109,13 @@ body {
   width: 100%;
   height: 300px;
   padding: 10px;
+  overflow-y: scroll;
+  font-size: 14px;
+  white-space: pre;
+  line-height: 1.4em;
+  padding: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
 }
 
 input[type=range] {

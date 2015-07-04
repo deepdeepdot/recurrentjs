@@ -1,7 +1,8 @@
 import {forwardIndex, forwardLSTM, initLSTM, forwardRNN, initRNN} from "../recurrent";
-import {RandMat, Mat, softmax} from "../mat.js";
+import softmax from "../softmax"
+import {RandMat, Mat} from "../mat";
 import {median, randi, maxi, samplei, gaussRandom} from "../math";
-import Graph from "../graph.js";
+import Graph from "../graph";
 
 var max_chars_gen = 100; // max length of generated sentences
 
