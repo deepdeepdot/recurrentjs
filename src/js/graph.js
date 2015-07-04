@@ -5,6 +5,7 @@ import _ from "lodash";
 
 function processGate(target, name, descriptor) {
   let fn = descriptor.value;
+  
   descriptor.value = function(...args) {
     let gate = fn.apply(this, args);
     gate.forward();
@@ -22,6 +23,10 @@ class Graph {
     // this will store a list of functions that perform backprop,
     // in their forward pass order. So in backprop we will go
     // backwards and evoke each one
+    this.reset();
+  }
+
+  reset() {
     this.backprop = [];
   }
 

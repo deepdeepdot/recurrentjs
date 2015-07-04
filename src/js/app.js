@@ -184,12 +184,15 @@ var loadModel = (j) => {
   tick_iter = 0;
 }
 
+var G = new Graph();
+
 var costfun = (model, sent) => {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
+  G.reset();
+
   var n = sent.length;
-  var G = new Graph();
   var log2ppl = 0.0;
   var cost = 0.0;
   var prev = {};
@@ -223,22 +226,21 @@ var cost_struct, solver_stats;
 
 // worker for predicting sentences on separate thread
 
-let w = work(require('./workers/predict_sentence_worker.js'));
+let worker = work(require('./workers/predict_sentence_worker.js'));
 let worker_callbacks = {};
 
-w.addEventListener('message', function (ev) {
+worker.addEventListener('message', function (ev) {
   let [id, data] = ev.data;
   if(worker_callbacks[id]){
     worker_callbacks[id](data);
-    delete worker_callbacks[id];
   }
 });
 
 let workerPredictSentence = (args, callback) => {
-  let id = randi(0,1000000);
+  let id = randi(0, 1000000);
   args.unshift(id);
   worker_callbacks[id] = callback;
-  w.postMessage(args);
+  worker.postMessage(args);
 }
 
 // time ticker for training and other tasks
