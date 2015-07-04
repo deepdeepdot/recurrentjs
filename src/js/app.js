@@ -280,34 +280,6 @@ ticker.every(100, function(){
   pplGraph.drawSelf();
 });
 
-var gradCheck = () => {
-  var model = initModel();
-  var sent = '^test sentence$';
-  var cost_struct = costfun(model, sent);
-  cost_struct.G.backward();
-  var eps = 0.000001;
-
-  for(var k in model) {
-    var m = model[k]; // mat ref
-    for(var i=0,n=m.w.length;i<n;i++) {
-      
-      oldval = m.w[i];
-      m.w[i] = oldval + eps;
-      var c0 = costfun(model, sent);
-      m.w[i] = oldval - eps;
-      var c1 = costfun(model, sent);
-      m.w[i] = oldval;
-
-      var gnum = (c0.cost - c1.cost)/(2 * eps);
-      var ganal = m.dw[i];
-      var relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
-      if(relerr > 1e-1) {
-        console.log(k + ': numeric: ' + gnum + ', analytic: ' + ganal + ', err: ' + relerr);
-      }
-    }
-  }
-}
-
 $(() => {
 
   // attach button handlers
@@ -344,8 +316,6 @@ $(() => {
   });
 
   $("#learn").click(); // simulate click on startup
-
-  //$('#gradcheck').click(gradCheck);
   
   render_learning_slider();
   render_input_file_container();
@@ -421,3 +391,33 @@ var render_input_file_container = () => {
     document.getElementById('choose_input_file')
   );
 }
+
+// var gradCheck = () => {
+//   var model = initModel();
+//   var sent = '^test sentence$';
+//   var cost_struct = costfun(model, sent);
+//   cost_struct.G.backward();
+//   var eps = 0.000001;
+
+//   for(var k in model) {
+//     var m = model[k]; // mat ref
+//     for(var i=0,n=m.w.length;i<n;i++) {
+      
+//       oldval = m.w[i];
+//       m.w[i] = oldval + eps;
+//       var c0 = costfun(model, sent);
+//       m.w[i] = oldval - eps;
+//       var c1 = costfun(model, sent);
+//       m.w[i] = oldval;
+
+//       var gnum = (c0.cost - c1.cost)/(2 * eps);
+//       var ganal = m.dw[i];
+//       var relerr = (gnum - ganal)/(Math.abs(gnum) + Math.abs(ganal));
+//       if(relerr > 1e-1) {
+//         console.log(k + ': numeric: ' + gnum + ', analytic: ' + ganal + ', err: ' + relerr);
+//       }
+//     }
+//   }
+// }
+
+//$('#gradcheck').click(gradCheck);
