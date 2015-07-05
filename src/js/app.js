@@ -35,7 +35,7 @@ let predict_num_lines = 10; // number of lines for the prediction to show
 let model = {};
 
 let generator = 'lstm';       // can be 'rnn' or 'lstm'
-let hidden_sizes = [20,20];   // list of sizes of hidden layers
+let hidden_sizes = [20, 20];   // list of sizes of hidden layers
 let letter_size = 5;          // size of letter embeddings
 
 // optimization
@@ -99,7 +99,7 @@ let App = React.createClass({
     this.sample_loop = setInterval(()=>{
       trainer.send(["sample_model"]).then((result)=>{
         model = result.model;
-
+        
         sampler.send([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
           .then((result) => {
             argmax = result;
@@ -402,7 +402,7 @@ let App = React.createClass({
   }
 })
 
-window.chosen_input_file = _.sample(window.input_files);window.input_files[randi(0, window.input_files.length)];
+window.chosen_input_file = _.sample(window.input_files);
 
 React.render(
   <App/>, 

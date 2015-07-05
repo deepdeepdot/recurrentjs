@@ -3,6 +3,7 @@ import softmax from "../softmax"
 import {RandMat, Mat} from "../mat";
 import {median, randi, maxi, samplei, gaussRandom} from "../math";
 import Graph from "../graph";
+import _ from "lodash";
 
 var max_chars_gen = 100; // max length of generated sentences
 
@@ -15,7 +16,14 @@ var predictSentence = (model, samplei_bool=false, temperature=1.0, letterToIndex
   while(true) {
 
     // RNN tick
-    ix = s.length === 0 ? 0 : letterToIndex[s[s.length-1]];
+    let ix;
+
+    if(s.length === 0){
+      ix = _.sample(_.values(letterToIndex));
+    } else {
+      ix = letterToIndex[_.last(s)];
+    }
+
     var lh = forwardIndex(G, model, ix, prev, generator, hidden_sizes);
     prev = lh;
 
