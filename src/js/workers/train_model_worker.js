@@ -1,25 +1,27 @@
 import Ticker from "../ticker";
-import _ from "lodash";
 import {costfun} from "../recurrent";
-import Solver from "../solver"; 
+import Solver from "../solver";
+import {randi} from "../math"; 
 
 let ticker = new Ticker();
 let solver = new Solver();
 
 let cost_struct, solver_stats;
-let data_sents, generator, letterToIndex, hidden_sizes, model, learning_rate, regc, clipval, epoch_size;
+let input_text, input_text_length, generator, letterToIndex, hidden_sizes, model, learning_rate, regc, clipval, epoch_size, train_seq_length;
 let ppl_list = [];
 
 ticker.every_tick(function(){
   // sample sentence from data
-  let sent = _.sample(data_sents);
+
+  let randind = randi(0, input_text_length - train_seq_length);
+  let sent = input_text.substr(randind, train_seq_length);
 
   // evaluate cost function on a sentence
-  cost_struct = costfun(model, sent, letterToIndex, generator, hidden_sizes);
+  cost_struct = costfun(self, model, sent, letterToIndex, generator, hidden_sizes);
   
   // use built up graph to compute backprop (set .dw fields in mats)
   cost_struct.G.backward();
-  
+
   // perform param update
   solver_stats = solver.step(model, learning_rate, regc, clipval);
   
@@ -37,12 +39,14 @@ module.exports = function (self) {
         ppl_list = [];
         ticker.reset();
 
-        data_sents =data.data_sents;
+        input_text =data.input_text;
+        input_text_length = data.input_text.length;
         generator = data.generator;
         letterToIndex = data.letterToIndex;
         hidden_sizes = data.hidden_sizes;
         model = data.model;
         learning_rate = data.learning_rate;
+        train_seq_length = data.train_seq_length;
         regc = data.regc;
         clipval = data.clipval;
         self.postMessage([id, "init"]);

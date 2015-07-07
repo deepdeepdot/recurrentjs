@@ -173,7 +173,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   return {'h':hidden, 'o' : output};
 }
 
-let costfun = (model, sent, letterToIndex, generator, hidden_sizes) => {
+let costfun = (self, model, sent, letterToIndex, generator, hidden_sizes) => {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
@@ -185,10 +185,10 @@ let costfun = (model, sent, letterToIndex, generator, hidden_sizes) => {
   let prev = {};
   let logprobs, probs;
 
-  for(let i=-1;i<n;i++) {
+  for(let i=0;i<(n-1);i++) {
     // start and end tokens are zeros
-    let ix_source = i === -1 ? 0 : letterToIndex[sent[i]]; // first step: start with START token
-    let ix_target = i === n-1 ? 0 : letterToIndex[sent[i+1]]; // last step: end with END token
+    let ix_source = letterToIndex[sent[i]]; // first step: start with START token
+    let ix_target = letterToIndex[sent[i+1]]; // last step: end with END token
 
     let lh = forwardIndex(G, model, ix_source, prev, generator, hidden_sizes);
     prev = lh;
@@ -205,6 +205,7 @@ let costfun = (model, sent, letterToIndex, generator, hidden_sizes) => {
     logprobs.dw[ix_target] -= 1
   }
   let ppl = Math.pow(2, log2ppl / (n - 1));
+
   return {G, ppl, cost};
 }
 

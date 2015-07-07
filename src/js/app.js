@@ -25,13 +25,13 @@ let epoch_size, input_size, output_size;
 let letterToIndex = {};
 let indexToLetter = {};
 let vocab = [];
-let data_sents = [];
+let train_seq_length = 50;
 
 let pplGraph;
 
 let step_cache_out, step_cache, input_text;
 
-let predict_num_lines = 10; // number of lines for the prediction to show
+let predict_num_chars = 1000; // number of lines for the prediction to show
 let model = {};
 
 let generator = 'lstm';       // can be 'rnn' or 'lstm'
@@ -49,12 +49,12 @@ let trainer  = new WebWorker(work(require('./workers/train_model_worker.js')));
 
 let epoch, perplexity, ticktime, samples, argmax;
 
-let initVocab = (sents, count_threshold) => {
+let initVocab = (txt, count_threshold) => {
   // go over all characters and keep track of all unique ones seen
-  let txt = sents.join(''); // concat all
 
   // count up all characters
   let d = {};
+
   for(let i=0,n=txt.length;i<n;i++) {
     let txti = txt[i];
     if(txti in d) { d[txti] += 1; } 
@@ -82,7 +82,7 @@ let initVocab = (sents, count_threshold) => {
   // globals written: indexToLetter, letterToIndex, vocab (list), and:
   input_size = vocab.length + 1;
   output_size = vocab.length + 1;
-  epoch_size = sents.length;
+  epoch_size = input_text.length / train_seq_length;
   vocab.sort();
   return vocab;
 }
@@ -99,13 +99,13 @@ let App = React.createClass({
     this.sample_loop = setInterval(()=>{
       trainer.send(["sample_model"]).then(({model})=>{
         
-        sampler.send([1, model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes])
+        sampler.send([50, model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes])
           .then((result) => {
             argmax = result;
             this.forceUpdate();
           });
         
-        sampler.send([10, model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes])
+        sampler.send([predict_num_chars, model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes])
           .then((result) => {
             samples = result;
             this.forceUpdate();
@@ -172,7 +172,8 @@ let App = React.createClass({
       model,
       generator,
       hidden_sizes,
-      data_sents,
+      input_text,
+      train_seq_length,
       learning_rate,
       regc,
       clipval,
@@ -262,19 +263,7 @@ let App = React.createClass({
 
     return Promise.resolve($.get(`/data/${chosen_input_file}`)).then((text) => {
       input_text = text;
-
-      let data_sents_raw = text.split('\n');
-
-      data_sents = [];
-
-      for(let i=0;i<data_sents_raw.length;i++) {
-        let sent = data_sents_raw[i].trim();
-        if(sent.length > 0) {
-          data_sents.push(sent);
-        }
-      }
-
-      initVocab(data_sents, 1); // takes count threshold for characters
+      initVocab(input_text, 1); // takes count threshold for characters
       this.forceUpdate();
 
       model = this.initModel();
