@@ -189,8 +189,9 @@ class ReluGate {
     let {m} = this.props;
     let out = new Mat(m.n, m.d);
     let n = m.w.length;
-    for(let i=0;i<n;i++) { 
-      out.w[i] = Math.max(0, m.w[i]); // relu
+    for(let i=0;i<n;i++) {
+      let deriv =  (m.w[i] > 0) ? 1 : ReluGate.LEAKY_CONST;
+      out.w[i] = deriv * m.w[i]; // relu
     }
     
     this.props.out = out;
@@ -198,11 +199,14 @@ class ReluGate {
 
   backward() {
     let {m, out} = this.props;
+    let n = m.w.length;
     for(let i=0;i<n;i++) {
-      m.dw[i] += m.w[i] > 0 ? out.dw[i] : 0.0;
+      m.dw[i] += out.dw[i] * (m.w[i] > 0 ? 1 : ReluGate.LEAKY_CONST);
     }
   }
 }
+
+ReluGate.LEAKY_CONST = 0.01;
 
 class SigmoidGate {
   constructor(m) {

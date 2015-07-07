@@ -12,7 +12,7 @@ let ppl_list = [];
 
 ticker.every_tick(function(){
   // sample sentence from data
-  let sent = _.sample(data_sents)
+  let sent = _.sample(data_sents);
 
   // evaluate cost function on a sentence
   cost_struct = costfun(model, sent, letterToIndex, generator, hidden_sizes);

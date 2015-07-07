@@ -3,10 +3,10 @@ import $ from "jquery";
 import work from "webworkify";
 
 import {costfun, forwardIndex, forwardLSTM, initLSTM, forwardRNN, initRNN} from "./recurrent";
+import {median, randi, maxi, samplei, gaussRandom} from "./math";
 import Rvis from "./vis";
 import {RandMat, Mat} from "./mat";
 import softmax from "./softmax"
-import {median, randi, maxi, samplei, gaussRandom} from "./math";
 import Graph from "./graph";
 import Solver from "./solver";
 import Ticker from "./ticker";
@@ -97,16 +97,15 @@ let App = React.createClass({
     this.stopSamplers();
 
     this.sample_loop = setInterval(()=>{
-      trainer.send(["sample_model"]).then((result)=>{
-        model = result.model;
+      trainer.send(["sample_model"]).then(({model})=>{
         
-        sampler.send([1, [model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes]])
+        sampler.send([1, model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes])
           .then((result) => {
             argmax = result;
             this.forceUpdate();
           });
         
-        sampler.send([predict_num_lines, [model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes]])
+        sampler.send([10, model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes])
           .then((result) => {
             samples = result;
             this.forceUpdate();
@@ -190,9 +189,11 @@ let App = React.createClass({
     out['letter_size'] = letter_size;
     let model_out = {};
     for(let k in model) {
-      model_out[k] = model[k].toJSON();
+      model_out[k] = model[k];
     }
     out['model'] = model_out;
+
+    let solver = new Solver();
     let solver_out = {};
     solver_out['decay_rate'] = solver.decay_rate;
     solver_out['smooth_eps'] = solver.smooth_eps;
