@@ -36,7 +36,7 @@ class Graph {
 
     let pts = [];
     for(let i=0; i<this.max_points;i++){
-      pts.push(this.pts[Math.floor(i*ratio)])
+      pts.push(this.pts[Math.round(i*ratio)])
     }
     return pts;
   }
@@ -99,7 +99,7 @@ class Graph {
       .enter().append('circle')
       .attr('cx', (d)=> x(d.step))
       .attr('cy', (d)=> y(d.y))
-      .attr('r', 3); 
+      .attr('r', 2); 
     
     graph.append("svg:path")
       .attr("d", line(pts));

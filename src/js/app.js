@@ -31,7 +31,7 @@ let pplGraph;
 
 let step_cache_out, step_cache, input_text;
 
-let predict_num_chars = 1000; // number of lines for the prediction to show
+let predict_num_chars = 500; // number of lines for the prediction to show
 let model = {};
 
 let generator = 'lstm';       // can be 'rnn' or 'lstm'
@@ -47,7 +47,7 @@ let clipval = 5.0;            // clip gradients at this value
 let sampler  = new WebWorker(work(require('./workers/predict_sentence_worker.js')));
 let trainer  = new WebWorker(work(require('./workers/train_model_worker.js')));
 
-let epoch, perplexity, ticktime, samples, argmax;
+let epoch, perplexity, ticktime, samples;
 
 let initVocab = (txt, count_threshold) => {
   // go over all characters and keep track of all unique ones seen
@@ -98,12 +98,6 @@ let App = React.createClass({
 
     this.sample_loop = setInterval(()=>{
       trainer.send(["sample_model"]).then(({model})=>{
-        
-        sampler.send([50, model, false, null, letterToIndex, indexToLetter, generator, hidden_sizes])
-          .then((result) => {
-            argmax = result;
-            this.forceUpdate();
-          });
         
         sampler.send([predict_num_chars, model, true, sample_softmax_temperature, letterToIndex, indexToLetter, generator, hidden_sizes])
           .then((result) => {
@@ -253,6 +247,7 @@ let App = React.createClass({
     epoch = null;
     ticktime = null;
     perplexity = null;
+    samples = '';
 
     pplGraph = pplGraph || new Rvis.Graph("#pplgraph");
     pplGraph.reset();
@@ -367,8 +362,6 @@ let App = React.createClass({
             <div className="aslider" id="temperature_slider">{temperature_slider}</div>
           </div>
           <div id="samples">{samples}</div>
-          <div className="hh">Greedy argmax prediction:</div>
-          <div id="argmax"><div className="apred">{argmax}</div></div>
         </div>
 
         <div id="io">
@@ -392,7 +385,7 @@ let App = React.createClass({
   }
 })
 
-window.chosen_input_file = _.sample(window.input_files);
+window.chosen_input_file = window.input_files[0];
 
 React.render(
   <App/>, 

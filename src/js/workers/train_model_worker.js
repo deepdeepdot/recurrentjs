@@ -12,12 +12,10 @@ let ppl_list = [];
 
 ticker.every_tick(function(){
   // sample sentence from data
-
   let randind = randi(0, input_text_length - train_seq_length);
   let sent = input_text.substr(randind, train_seq_length);
 
-  // evaluate cost function on a sentence
-  cost_struct = costfun(self, model, sent, letterToIndex, generator, hidden_sizes);
+  cost_struct = costfun(model, sent, letterToIndex, generator, hidden_sizes);
   
   // use built up graph to compute backprop (set .dw fields in mats)
   cost_struct.G.backward();
@@ -26,7 +24,6 @@ ticker.every_tick(function(){
   solver_stats = solver.step(model, learning_rate, regc, clipval);
   
   ppl_list.push(cost_struct.ppl); // keep track of perplexity
-  // evaluate now and then
 })
 
 module.exports = function (self) {

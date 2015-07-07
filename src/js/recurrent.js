@@ -173,7 +173,7 @@ var initRNN = (input_size, hidden_sizes, output_size) => {
   return {'h':hidden, 'o' : output};
 }
 
-let costfun = (self, model, sent, letterToIndex, generator, hidden_sizes) => {
+let costfun = (model, sent, letterToIndex, generator, hidden_sizes) => {
   // takes a model and a sentence and
   // calculates the loss. Also returns the Graph
   // object which can be used to do backprop
