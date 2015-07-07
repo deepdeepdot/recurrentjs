@@ -153,17 +153,17 @@ let App = React.createClass({
   },
 
   initModel() {
-    let model = {
+    let m = {
       Wil: new RandMat(input_size, letter_size)
     };
     
     let fn = (generator==='rnn') ? initRNN : initLSTM;
     let network = fn(letter_size, hidden_sizes, output_size)
     
-    _.merge(model, network);
+    _.merge(m, network);
 
-    trainer.send(["init", {
-      model,
+    let promise = trainer.send(["init", {
+      model: m,
       generator,
       hidden_sizes,
       input_text,
@@ -174,7 +174,8 @@ let App = React.createClass({
       letterToIndex
     }]);
 
-    return model;
+    model = m;
+    return promise;
   },
 
   saveModel() {
@@ -252,25 +253,19 @@ let App = React.createClass({
     pplGraph = pplGraph || new Rvis.Graph("#pplgraph");
     pplGraph.reset();
 
-    trainer.send(["reset"]);
-
     // process the input, filter out blanks
 
     return Promise.resolve($.get(`/data/${chosen_input_file}`)).then((text) => {
       input_text = text;
       initVocab(input_text, 1); // takes count threshold for characters
       this.forceUpdate();
-
-      model = this.initModel();
+      return this.initModel();
     });
   },
 
   set_input_file(input_file) {
     window.chosen_input_file = input_file;
-    
-    this.reinit().then(()=>{
-      this.resumeLearning();
-    });
+    this.startLearning();
   },
 
   render() {
@@ -385,7 +380,7 @@ let App = React.createClass({
   }
 })
 
-window.chosen_input_file = window.input_files[0];
+window.chosen_input_file = _.sample(window.input_files);
 
 React.render(
   <App/>, 

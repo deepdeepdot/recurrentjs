@@ -32,10 +32,10 @@ module.exports = function (self) {
     
     switch(cmd){
       case 'init':
-        cost_struct = null;
-        ppl_list = [];
         ticker.reset();
 
+        cost_struct = null;
+        ppl_list = [];
         input_text =data.input_text;
         input_text_length = data.input_text.length;
         generator = data.generator;
@@ -46,6 +46,7 @@ module.exports = function (self) {
         train_seq_length = data.train_seq_length;
         regc = data.regc;
         clipval = data.clipval;
+        
         self.postMessage([id, "init"]);
         break;
       case 'start':
@@ -65,7 +66,7 @@ module.exports = function (self) {
       case 'update_learning_rate':
         learning_rate = data.learning_rate
       case 'sample':
-        if(!cost_struct){ return; }
+        if(!cost_struct || !cost_struct.ppl){ return; }
         self.postMessage([id, {
           tick_iter: ticker.tick_iter,
           tick_time: ticker.tick_time,
