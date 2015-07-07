@@ -105,7 +105,7 @@ var forwardLSTM = (G, model, hidden_sizes, x, prev) => {
     var cell_d = G.add(retain_cell, write_cell); // new cell contents
 
     // compute hidden state as gated, saturated cell activations
-    var hidden_d = G.eltmul(output_gate, G.tanh(cell_d));
+    var hidden_d = G.eltmul(output_gate, G.relu(cell_d));
 
     hidden.push(hidden_d);
     cell.push(cell_d);

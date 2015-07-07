@@ -14,6 +14,7 @@ class Graph {
     this.pts = [];
     this.maxy = -9999;
     this.miny = 9999;
+    this.max_points = 40;
   }
 
   clearGraph() {
@@ -28,16 +29,30 @@ class Graph {
     this.pts.push({step, time, y});
   }
   
+  samplePoints() {
+    let ratio = (this.pts.length / this.max_points);
+    if(Math.floor(ratio) < 1)
+      return this.pts;
+
+    let pts = [];
+    for(let i=0; i<this.max_points;i++){
+      pts.push(this.pts[Math.floor(i*ratio)])
+    }
+    return pts;
+  }
+
   drawSelf(canv) {
     if(this.pts.length < 2)
       return;
+
+    let pts = this.samplePoints();
 
     var m = {top: 10, right: 10, bottom: 20, left: 20};
     var w = 250 - m.right - m.left;
     var h = 200 - m.top - m.bottom;
   
-    let first_pt = this.pts[0];
-    let last_pt = this.pts[this.pts.length - 1];
+    let first_pt = pts[0];
+    let last_pt = pts[pts.length - 1];
 
     var x = d3.scale.linear().domain([first_pt.step, last_pt.step]).range([0, w]);
     var y = d3.scale.linear().domain([this.miny, this.maxy]).range([h, 0]);
@@ -80,14 +95,14 @@ class Graph {
       .call(yAxis);
     
     graph.selectAll('circle')
-      .data(this.pts)
+      .data(pts)
       .enter().append('circle')
       .attr('cx', (d)=> x(d.step))
       .attr('cy', (d)=> y(d.y))
       .attr('r', 3); 
     
     graph.append("svg:path")
-      .attr("d", line(this.pts));
+      .attr("d", line(pts));
   }
 }
 
